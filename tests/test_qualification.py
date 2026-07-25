@@ -33,13 +33,15 @@ def test_complete_open_opportunity_becomes_mission_candidate() -> None:
     assert result.mission_candidate.decision_id == result.decision.decision_id
 
 
-def test_incomplete_opportunity_requires_operator_review() -> None:
+def test_promising_opportunity_with_unknown_deadline_requires_operator_review() -> None:
     opportunity = Opportunity(
         opportunity_id="sam-review",
         source="sam.gov",
         source_record_id="review",
         title="Sparse Research Notice",
         agency="Department of Example",
+        description="Research support with a deadline that has not yet been published.",
+        urls=["https://sam.gov/opp/review/view"],
     )
 
     result = QualificationEngine().qualify(opportunity, observed_at=OBSERVED_AT)
