@@ -8,12 +8,16 @@ import sys
 from pathlib import Path
 
 from gov_ops.infinite_brain import InfiniteBrainPublisher
+from gov_ops.qualification import QualificationEngine
 from gov_ops.sam_gov import SAMGovOpportunitiesClient, normalize_search_response
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Fetch active SAM.gov opportunities and emit canonical Opportunity objects."
+        description=(
+            "Fetch active SAM.gov opportunities, emit canonical Opportunity objects, "
+            "and optionally produce deterministic qualification decisions."
+        )
     )
     parser.add_argument("--api-key", default=os.getenv("SAM_GOV_API_KEY"))
     parser.add_argument("--posted-from", required=True, help="MM/DD/YYYY")
@@ -25,6 +29,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--naics")
     parser.add_argument("--organization")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--qualification-output",
+        type=Path,
+        help=(
+            "Optional JSON output for evidence packages, decision records, and mission "
+            "candidates produced by the deterministic qualification policy."
+        ),
+    )
     parser.add_argument(
         "--infinite-brain-root",
         type=Path,
@@ -59,6 +71,21 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(opportunities, indent=2), encoding="utf-8")
     print(f"Wrote {len(opportunities)} normalized opportunities to {args.output}")
+
+    if args.qualification_output:
+        qualification_results = QualificationEngine().qualify_many(normalized)
+        args.qualification_output.parent.mkdir(parents=True, exist_ok=True)
+        args.qualification_output.write_text(
+            json.dumps([item.to_dict() for item in qualification_results], indent=2),
+            encoding="utf-8",
+        )
+        candidate_count = sum(
+            item.mission_candidate is not None for item in qualification_results
+        )
+        print(
+            f"Wrote {len(qualification_results)} qualification decisions with "
+            f"{candidate_count} mission candidates to {args.qualification_output}"
+        )
 
     if args.infinite_brain_root:
         publisher = InfiniteBrainPublisher(args.infinite_brain_root)
