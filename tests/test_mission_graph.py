@@ -4,7 +4,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-from gov_ops.mission_graph import MissionGraphBuilder, MissionGraphEdge, MissionGraph, MissionGraphNode
+from gov_ops.mission_graph import (
+    MissionGraph,
+    MissionGraphBuilder,
+    MissionGraphEdge,
+    MissionGraphNode,
+)
 from gov_ops.opportunity import Opportunity
 from gov_ops.qualification import QualificationEngine
 
