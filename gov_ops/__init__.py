@@ -1,6 +1,12 @@
-"""Government opportunity ingestion and qualification spine."""
+"""Government opportunity ingestion, qualification, and mission lineage spine."""
 
 from .infinite_brain import InfiniteBrainPublisher, PublishedIntakeRecord
+from .mission_graph import (
+    MissionGraph,
+    MissionGraphBuilder,
+    MissionGraphEdge,
+    MissionGraphNode,
+)
 from .opportunity import Opportunity
 from .qualification import (
     DecisionRecord,
@@ -18,6 +24,10 @@ __all__ = [
     "EvidencePackage",
     "InfiniteBrainPublisher",
     "MissionCandidate",
+    "MissionGraph",
+    "MissionGraphBuilder",
+    "MissionGraphEdge",
+    "MissionGraphNode",
     "Opportunity",
     "PublishedIntakeRecord",
     "QualificationEngine",
