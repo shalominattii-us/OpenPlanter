@@ -1,7 +1,9 @@
 """Government opportunity ingestion, qualification, governance, and mission lineage spine."""
 
 from .governance import (
+    CoreMutationProposal,
     EagleCratAdvisory,
+    GovernanceEvent,
     GovernanceRequest,
     Mission,
     SovereignAuthorization,
@@ -26,10 +28,12 @@ from .qualification import (
 from .sam_gov import SAMGovOpportunitiesClient, normalize_sam_opportunity
 
 __all__ = [
+    "CoreMutationProposal",
     "DecisionRecord",
     "EagleCratAdvisory",
     "EvidenceBuilder",
     "EvidencePackage",
+    "GovernanceEvent",
     "GovernanceRequest",
     "InfiniteBrainPublisher",
     "Mission",
