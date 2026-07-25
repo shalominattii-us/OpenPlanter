@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from gov_ops.infinite_brain import InfiniteBrainPublisher
+from gov_ops.mission_graph import MissionGraphBuilder
 from gov_ops.qualification import QualificationEngine
 from gov_ops.sam_gov import SAMGovOpportunitiesClient, normalize_search_response
 
@@ -16,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Fetch active SAM.gov opportunities, emit canonical Opportunity objects, "
-            "and optionally produce deterministic qualification decisions."
+            "and optionally produce deterministic qualification and mission-lineage records."
         )
     )
     parser.add_argument("--api-key", default=os.getenv("SAM_GOV_API_KEY"))
@@ -35,6 +36,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Optional JSON output for evidence packages, decision records, and mission "
             "candidates produced by the deterministic qualification policy."
+        ),
+    )
+    parser.add_argument(
+        "--mission-graph-output",
+        type=Path,
+        help=(
+            "Optional JSON output for replayable Opportunity -> Evidence -> Decision -> "
+            "MissionCandidate lineage graphs. This does not create accepted missions."
         ),
     )
     parser.add_argument(
@@ -72,8 +81,11 @@ def main() -> int:
     args.output.write_text(json.dumps(opportunities, indent=2), encoding="utf-8")
     print(f"Wrote {len(opportunities)} normalized opportunities to {args.output}")
 
-    if args.qualification_output:
+    qualification_results = None
+    if args.qualification_output or args.mission_graph_output:
         qualification_results = QualificationEngine().qualify_many(normalized)
+
+    if args.qualification_output and qualification_results is not None:
         args.qualification_output.parent.mkdir(parents=True, exist_ok=True)
         args.qualification_output.write_text(
             json.dumps([item.to_dict() for item in qualification_results], indent=2),
@@ -85,6 +97,22 @@ def main() -> int:
         print(
             f"Wrote {len(qualification_results)} qualification decisions with "
             f"{candidate_count} mission candidates to {args.qualification_output}"
+        )
+
+    if args.mission_graph_output and qualification_results is not None:
+        builder = MissionGraphBuilder()
+        graphs = [
+            builder.build(opportunity, result)
+            for opportunity, result in zip(normalized, qualification_results, strict=True)
+        ]
+        args.mission_graph_output.parent.mkdir(parents=True, exist_ok=True)
+        args.mission_graph_output.write_text(
+            json.dumps([graph.to_dict() for graph in graphs], indent=2),
+            encoding="utf-8",
+        )
+        print(
+            f"Wrote {len(graphs)} mission lineage graphs to "
+            f"{args.mission_graph_output}"
         )
 
     if args.infinite_brain_root:
