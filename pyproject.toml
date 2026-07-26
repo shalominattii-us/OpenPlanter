@@ -22,6 +22,7 @@ textual = [
 
 [project.scripts]
 openplanter-agent = "agent.__main__:main"
+openplanter-opportunities = "agent.opportunities.runner:main"
 
 [tool.setuptools.packages.find]
 include = ["agent*"]

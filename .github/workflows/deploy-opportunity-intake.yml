@@ -1,0 +1,157 @@
+name: Deploy Opportunity Intake
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region
+        required: true
+        default: us-east-1
+      stack_name:
+        description: CloudFormation stack name
+        required: true
+        default: openplanter-opportunity-intake
+      ecr_repository:
+        description: ECR repository name
+        required: true
+        default: openplanter-opportunity-intake
+      cluster_arn:
+        description: Existing ECS cluster ARN
+        required: true
+      vpc_id:
+        description: VPC ID
+        required: true
+      private_subnet_ids:
+        description: Comma-separated private subnet IDs
+        required: true
+      efs_security_group_id:
+        description: Existing EFS security group ID
+        required: true
+      sam_gov_secret_arn:
+        description: Secrets Manager ARN containing the SAM.gov API key
+        required: true
+      schedule_expression:
+        description: EventBridge Scheduler expression
+        required: true
+        default: cron(0 6 * * ? *)
+      schedule_timezone:
+        description: IANA timezone for the schedule
+        required: true
+        default: UTC
+      notification_email:
+        description: Optional failure-notification email
+        required: false
+        default: ''
+      run_smoke_task:
+        description: Run one ECS task after deployment
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: opportunity-intake-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ inputs.aws_region }}
+  STACK_NAME: ${{ inputs.stack_name }}
+  ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+
+jobs:
+  deploy:
+    name: Build, publish, and deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: openplanter-github-deploy
+
+      - name: Validate deployment inputs
+        shell: bash
+        env:
+          CLUSTER_ARN: ${{ inputs.cluster_arn }}
+          VPC_ID: ${{ inputs.vpc_id }}
+          PRIVATE_SUBNET_IDS: ${{ inputs.private_subnet_ids }}
+          EFS_SECURITY_GROUP_ID: ${{ inputs.efs_security_group_id }}
+          SAM_GOV_SECRET_ARN: ${{ inputs.sam_gov_secret_arn }}
+        run: ./scripts/aws/validate-opportunity-deployment.sh
+
+      - name: Ensure ECR repository exists
+        shell: bash
+        run: |
+          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || \
+            aws ecr create-repository \
+              --repository-name "$ECR_REPOSITORY" \
+              --image-scanning-configuration scanOnPush=true \
+              --encryption-configuration encryptionType=AES256 >/dev/null
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push immutable image
+        id: image
+        shell: bash
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="${GITHUB_SHA}"
+          IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker build --pull --file Dockerfile.opportunities --tag "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          DIGEST="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          PINNED_IMAGE="${REGISTRY}/${ECR_REPOSITORY}@${DIGEST}"
+          echo "image_uri=$PINNED_IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy CloudFormation stack
+        shell: bash
+        env:
+          CONTAINER_IMAGE: ${{ steps.image.outputs.image_uri }}
+          CLUSTER_ARN: ${{ inputs.cluster_arn }}
+          VPC_ID: ${{ inputs.vpc_id }}
+          PRIVATE_SUBNET_IDS: ${{ inputs.private_subnet_ids }}
+          EFS_SECURITY_GROUP_ID: ${{ inputs.efs_security_group_id }}
+          SAM_GOV_SECRET_ARN: ${{ inputs.sam_gov_secret_arn }}
+          SCHEDULE_EXPRESSION: ${{ inputs.schedule_expression }}
+          SCHEDULE_TIMEZONE: ${{ inputs.schedule_timezone }}
+          NOTIFICATION_EMAIL: ${{ inputs.notification_email }}
+        run: ./scripts/aws/deploy-opportunity-intake.sh
+
+      - name: Run smoke task
+        if: ${{ inputs.run_smoke_task }}
+        shell: bash
+        env:
+          CLUSTER_ARN: ${{ inputs.cluster_arn }}
+        run: ./scripts/aws/smoke-opportunity-intake.sh
+
+      - name: Publish deployment summary
+        if: always()
+        shell: bash
+        env:
+          CONTAINER_IMAGE: ${{ steps.image.outputs.image_uri }}
+        run: |
+          {
+            echo '## Opportunity intake deployment'
+            echo
+            echo "- Stack: \`$STACK_NAME\`"
+            echo "- Region: \`$AWS_REGION\`"
+            echo "- Image: \`${CONTAINER_IMAGE:-not-built}\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"

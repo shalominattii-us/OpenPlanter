@@ -1,0 +1,23 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN addgroup --system openplanter && adduser --system --ingroup openplanter openplanter
+
+COPY pyproject.toml README.md ./
+COPY agent ./agent
+
+RUN python -m pip install --upgrade pip && \
+    python -m pip install .
+
+RUN mkdir -p /mnt/opportunities/runs /mnt/opportunities/reports && \
+    chown -R openplanter:openplanter /mnt/opportunities
+
+USER openplanter
+
+ENTRYPOINT ["openplanter-opportunities"]
+CMD ["--output-root", "/mnt/opportunities/runs", "--report-path", "/mnt/opportunities/reports/latest-report.json"]
