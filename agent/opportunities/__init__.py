@@ -1,5 +1,6 @@
 """Canonical domain layer for the Universal Opportunity Intake pipeline."""
 
+from .adapters import SAMGovClient, SAMGovSource, normalize_sam_record
 from .domain import (
     EvidenceAssessment,
     EvidencePacket,
@@ -53,11 +54,14 @@ __all__ = [
     "QualificationPolicy",
     "QualificationStatus",
     "RUN_MANIFEST_SCHEMA_VERSION",
+    "SAMGovClient",
+    "SAMGovSource",
     "SourceMetadata",
     "UniversalDailyIntakeBridge",
     "UniversalIntakeAdapter",
     "build_mission_candidate",
     "build_mission_graph",
     "collect_normalized",
+    "normalize_sam_record",
     "to_primitive",
 ]
