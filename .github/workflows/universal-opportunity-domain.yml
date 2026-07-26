@@ -5,6 +5,10 @@ on:
     paths:
       - "agent/opportunities/**"
       - "tests/test_opportunity_*.py"
+      - "infra/aws/**"
+      - "Dockerfile.opportunities"
+      - "docs/aws-opportunity-intake-deployment.md"
+      - "pyproject.toml"
       - ".github/workflows/universal-opportunity-domain.yml"
   push:
     branches:
@@ -13,6 +17,10 @@ on:
     paths:
       - "agent/opportunities/**"
       - "tests/test_opportunity_*.py"
+      - "infra/aws/**"
+      - "Dockerfile.opportunities"
+      - "docs/aws-opportunity-intake-deployment.md"
+      - "pyproject.toml"
       - ".github/workflows/universal-opportunity-domain.yml"
 
 permissions:
@@ -42,3 +50,27 @@ jobs:
 
       - name: Run Universal Opportunity tests
         run: python -m pytest -q tests/test_opportunity_*.py
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install CloudFormation linter
+        run: python -m pip install cfn-lint
+
+      - name: Validate CloudFormation
+        run: cfn-lint infra/aws/opportunity-intake-scheduled-task.yaml
+
+      - name: Build production intake image
+        run: docker build -f Dockerfile.opportunities -t openplanter-opportunities:ci .
+
+      - name: Verify container command
+        run: docker run --rm openplanter-opportunities:ci --help
