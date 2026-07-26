@@ -10,6 +10,13 @@ from .domain import (
     QualificationStatus,
     to_primitive,
 )
+from .integration import (
+    ArtifactSink,
+    DailyIntakeResult,
+    IntakeArtifactBundle,
+    JsonDirectoryArtifactSink,
+    UniversalDailyIntakeBridge,
+)
 from .pipeline import (
     QualificationPolicy,
     UniversalIntakeAdapter,
@@ -17,14 +24,19 @@ from .pipeline import (
 )
 
 __all__ = [
+    "ArtifactSink",
+    "DailyIntakeResult",
     "EvidenceAssessment",
     "EvidencePacket",
+    "IntakeArtifactBundle",
+    "JsonDirectoryArtifactSink",
     "MissionCandidate",
     "Opportunity",
     "ProvenanceRecord",
     "QualificationDecision",
     "QualificationPolicy",
     "QualificationStatus",
+    "UniversalDailyIntakeBridge",
     "UniversalIntakeAdapter",
     "build_mission_candidate",
     "to_primitive",
