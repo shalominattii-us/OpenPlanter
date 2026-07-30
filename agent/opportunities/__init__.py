@@ -1,4 +1,4 @@
-"""Canonical domain layer for the Universal Opportunity Intake pipeline."""
+"""Canonical domain layer for universal opportunity intake and execution."""
 
 from .adapters import SAMGovClient, SAMGovSource, normalize_sam_record
 from .domain import (
@@ -10,6 +10,15 @@ from .domain import (
     QualificationDecision,
     QualificationStatus,
     to_primitive,
+)
+from .execution import (
+    EXECUTION_PLAN_SCHEMA_VERSION,
+    ApprovalRequirement,
+    ExecutionPlan,
+    ExecutionPlanStatus,
+    ExecutionPolicy,
+    ExecutionStep,
+    ExecutionStepKind,
 )
 from .graph import (
     MISSION_GRAPH_SCHEMA_VERSION,
@@ -35,11 +44,18 @@ from .pipeline import (
 from .sources import OpportunitySource, SourceMetadata, collect_normalized
 
 __all__ = [
+    "ApprovalRequirement",
     "ArtifactSink",
     "DailyIntakeResult",
     "ENGINE_VERSION",
+    "EXECUTION_PLAN_SCHEMA_VERSION",
     "EvidenceAssessment",
     "EvidencePacket",
+    "ExecutionPlan",
+    "ExecutionPlanStatus",
+    "ExecutionPolicy",
+    "ExecutionStep",
+    "ExecutionStepKind",
     "IntakeArtifactBundle",
     "JsonDirectoryArtifactSink",
     "MISSION_GRAPH_SCHEMA_VERSION",
