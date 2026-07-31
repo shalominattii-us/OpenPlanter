@@ -1,6 +1,11 @@
 """Canonical domain layer for universal opportunity intake and execution."""
 
 from .adapters import SAMGovClient, SAMGovSource, normalize_sam_record
+from .context_snapshot import (
+    EXECUTION_CONTEXT_SNAPSHOT_SCHEMA_VERSION,
+    ExecutionContextSnapshot,
+    SQLiteExecutionContextSnapshotStore,
+)
 from .domain import (
     EvidenceAssessment,
     EvidencePacket,
@@ -86,6 +91,7 @@ __all__ = [
     "DailyIntakeResult",
     "DeterministicExecutionOrchestrator",
     "ENGINE_VERSION",
+    "EXECUTION_CONTEXT_SNAPSHOT_SCHEMA_VERSION",
     "EXECUTION_PLAN_SCHEMA_VERSION",
     "EXECUTION_RECORD_SCHEMA_VERSION",
     "EvidenceAssessment",
@@ -93,6 +99,7 @@ __all__ = [
     "ExecutionArtifact",
     "ExecutionArtifactResult",
     "ExecutionContext",
+    "ExecutionContextSnapshot",
     "ExecutionEvent",
     "ExecutionEventStore",
     "ExecutionEventType",
@@ -132,6 +139,7 @@ __all__ = [
     "RUN_MANIFEST_SCHEMA_VERSION",
     "SAMGovClient",
     "SAMGovSource",
+    "SQLiteExecutionContextSnapshotStore",
     "SQLiteExecutionEventStore",
     "SourceMetadata",
     "StepState",
