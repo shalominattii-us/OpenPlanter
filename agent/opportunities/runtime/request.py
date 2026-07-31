@@ -5,6 +5,7 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 from ..execution import ExecutionStep
+from .memory import ExecutionMemory
 
 
 def _freeze_value(value: Any) -> Any:
@@ -41,6 +42,7 @@ class ExecutionRequest:
     request_id: str
     execution_run_id: str
     step: ExecutionStep
+    execution_memory: ExecutionMemory = field(default_factory=ExecutionMemory)
     inputs: Mapping[str, Any] = field(default_factory=dict)
     configuration: Mapping[str, Any] = field(default_factory=dict)
     metadata: Mapping[str, Any] = field(default_factory=dict)
