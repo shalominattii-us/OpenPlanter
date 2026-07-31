@@ -5,7 +5,24 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 from ..execution_record import ExecutionArtifact
-from .request import _freeze_mapping, _freeze_value
+
+
+def _freeze_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return _freeze_mapping(value)
+    if isinstance(value, tuple):
+        return tuple(_freeze_value(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_freeze_value(item) for item in value)
+    if isinstance(value, set | frozenset):
+        return frozenset(_freeze_value(item) for item in value)
+    return value
+
+
+def _freeze_mapping(values: Mapping[str, Any]) -> Mapping[str, Any]:
+    return MappingProxyType(
+        {str(key): _freeze_value(value) for key, value in values.items()}
+    )
 
 
 def _freeze_records(
