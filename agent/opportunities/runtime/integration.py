@@ -7,6 +7,7 @@ from typing import Any
 from ..execution import ExecutionStep
 from ..lifecycle import ExecutionContext
 from ..orchestrator import DeterministicExecutionOrchestrator, StepStatus
+from .materialization import ArtifactMaterializer
 from .result import ExecutionResult
 
 
@@ -15,11 +16,12 @@ class ExecutionResultIntegrator:
     """Translate plugin information into authoritative execution records.
 
     Plugins remain authority-poor: they return an ``ExecutionResult``. This
-    service records artifacts and delegates all state transitions to the
-    orchestrator and recorder.
+    service optionally materializes artifact payloads, records the exact durable
+    files, and delegates all state transitions to the orchestrator and recorder.
     """
 
     orchestrator: DeterministicExecutionOrchestrator
+    materializer: ArtifactMaterializer | None = None
 
     def apply(
         self,
@@ -53,19 +55,38 @@ class ExecutionResultIntegrator:
 
         artifact_ids: list[str] = []
         for artifact in result.artifacts:
+            uri = artifact.uri
+            checksum = None
+            materialization_metadata: dict[str, Any] = {}
+            if self.materializer is not None and artifact.content is not None:
+                materialized = self.materializer.materialize(
+                    fresh.execution_run.execution_run_id,
+                    step.step_id,
+                    artifact,
+                )
+                uri = materialized.uri
+                checksum = materialized.checksum_sha256
+                materialization_metadata = {
+                    "materialized": True,
+                    "size_bytes": materialized.size_bytes,
+                    "logical_uri": artifact.uri,
+                }
+
             recorded = self.orchestrator.recorder.record_artifact(
                 fresh.execution_run.execution_run_id,
                 name=artifact.name,
-                uri=artifact.uri,
+                uri=uri,
                 media_type=artifact.media_type or "application/octet-stream",
                 actor=actor,
                 created_at=timestamp,
+                checksum_sha256=checksum,
                 step_id=step.step_id,
                 metadata={
                     "plugin_id": result.metadata_map.get("plugin_id"),
                     "plugin_version": result.metadata_map.get("plugin_version"),
                     "request_id": result.metadata_map.get("request_id"),
                     "trace_id": result.metadata_map.get("trace_id"),
+                    **materialization_metadata,
                 },
             )
             artifact_ids.append(recorded.artifact_id)
