@@ -22,8 +22,10 @@ from .result import ExecutionArtifactResult, ExecutionResult
 from .routing import route_plugin
 from .run_loop import DeterministicRunLoop, ExecutionCheckpoint, ExecutionRunReport
 from .service import DeterministicExecutionService
+from .submission import ApprovalGatedSubmissionExecutorPlugin
 
 __all__ = [
+    "ApprovalGatedSubmissionExecutorPlugin",
     "ArtifactMaterializer",
     "Capability",
     "DeliverableBuilderExecutorPlugin",
