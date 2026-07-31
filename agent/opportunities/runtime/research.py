@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -53,6 +54,15 @@ class ResearchExecutorPlugin:
         present = tuple(key for key in _REQUIRED_FACTS if facts[key] not in (None, ""))
         missing = tuple(key for key in _REQUIRED_FACTS if facts[key] in (None, ""))
         completeness = len(present) / len(_REQUIRED_FACTS)
+        brief = {
+            "schema_version": "validated-opportunity-brief-v1",
+            "execution_run_id": request.execution_run_id,
+            "step_id": request.step.step_id,
+            "facts": facts,
+            "validated_fields": list(present),
+            "missing_fields": list(missing),
+            "fact_completeness": completeness,
+        }
 
         artifact = ExecutionArtifactResult(
             name="validated-opportunity-brief.json",
@@ -61,6 +71,7 @@ class ResearchExecutorPlugin:
                 f"steps/{request.step.step_id}/validated-opportunity-brief.json"
             ),
             media_type="application/json",
+            content=json.dumps(brief, indent=2, sort_keys=True) + "\n",
         )
 
         return ExecutionResult.succeeded(
