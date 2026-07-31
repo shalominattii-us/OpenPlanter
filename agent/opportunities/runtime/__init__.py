@@ -11,6 +11,7 @@ from .noop import NoOpPlugin
 from .plugin import ExecutionPlugin
 from .registry import PluginRegistrationError, PluginRegistry, PluginResolutionError
 from .request import ExecutionRequest
+from .research import ResearchExecutorPlugin
 from .result import ExecutionArtifactResult, ExecutionResult
 from .routing import route_plugin
 
@@ -26,6 +27,7 @@ __all__ = [
     "PluginRegistry",
     "PluginResolutionError",
     "PluginRuntime",
+    "ResearchExecutorPlugin",
     "required_capabilities",
     "route_plugin",
 ]
