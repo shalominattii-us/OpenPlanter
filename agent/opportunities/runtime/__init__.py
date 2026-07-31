@@ -16,9 +16,11 @@ from .request import ExecutionRequest
 from .research import ResearchExecutorPlugin
 from .result import ExecutionArtifactResult, ExecutionResult
 from .routing import route_plugin
+from .service import DeterministicExecutionService
 
 __all__ = [
     "Capability",
+    "DeterministicExecutionService",
     "EligibilityExecutorPlugin",
     "ExecutionArtifactResult",
     "ExecutionMemory",
