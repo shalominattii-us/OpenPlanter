@@ -50,6 +50,7 @@ from .integration import (
     JsonDirectoryArtifactSink,
     UniversalDailyIntakeBridge,
 )
+from .lifecycle import ExecutionContext, ExecutionLifecycle
 from .pipeline import (
     QualificationPolicy,
     UniversalIntakeAdapter,
@@ -67,9 +68,11 @@ __all__ = [
     "EvidenceAssessment",
     "EvidencePacket",
     "ExecutionArtifact",
+    "ExecutionContext",
     "ExecutionEvent",
     "ExecutionEventStore",
     "ExecutionEventType",
+    "ExecutionLifecycle",
     "ExecutionOutcome",
     "ExecutionOutcomeStatus",
     "ExecutionPlan",
