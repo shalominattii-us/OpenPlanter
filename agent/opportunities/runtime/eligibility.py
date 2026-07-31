@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 from ..execution import ExecutionStep, ExecutionStepKind
@@ -43,13 +44,22 @@ class EligibilityExecutorPlugin:
             {
                 "requirement": requirement,
                 "status": "requires_evidence",
-                "evidence": (),
+                "evidence": [],
                 "gap": f"Evidence has not yet been attached for: {requirement}",
                 "owner": None,
             }
             for requirement in requirements
         )
         prior_research_completed = bool(request.execution_memory.completed_steps)
+        payload = {
+            "schema_version": "eligibility-matrix-v1",
+            "execution_run_id": request.execution_run_id,
+            "step_id": request.step.step_id,
+            "requires_operator_review": True,
+            "prior_research_completed": prior_research_completed,
+            "requirements": list(requirements),
+            "matrix": list(matrix),
+        }
 
         artifact = ExecutionArtifactResult(
             name="eligibility-matrix.json",
@@ -58,6 +68,7 @@ class EligibilityExecutorPlugin:
                 f"{request.step.step_id}/eligibility-matrix.json"
             ),
             media_type="application/json",
+            content=json.dumps(payload, indent=2, sort_keys=True) + "\n",
         )
 
         return ExecutionResult.succeeded(
