@@ -5,6 +5,7 @@ information through ExecutionResult and never advance workflow state.
 """
 
 from .capabilities import Capability, required_capabilities
+from .deliverable import DeliverableBuilderExecutorPlugin
 from .eligibility import EligibilityExecutorPlugin
 from .executor import PluginRuntime
 from .integration import ExecutionResultIntegrator
@@ -24,6 +25,7 @@ from .service import DeterministicExecutionService
 __all__ = [
     "ArtifactMaterializer",
     "Capability",
+    "DeliverableBuilderExecutorPlugin",
     "DeterministicExecutionService",
     "DeterministicRunLoop",
     "EligibilityExecutorPlugin",
