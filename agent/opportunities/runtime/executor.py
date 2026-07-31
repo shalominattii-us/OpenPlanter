@@ -71,6 +71,7 @@ class PluginRuntime:
             "execution_plan_id": context.execution_plan.execution_plan_id,
             "mission_candidate_id": context.mission_candidate.mission_candidate_id,
             "opportunity_id": context.opportunity.opportunity_id,
+            "eligibility": tuple(context.opportunity.eligibility),
             **dict(metadata or {}),
         }
         return ExecutionRequest(
