@@ -24,13 +24,7 @@ _TERMINAL_RUN_STATUSES = frozenset(
 
 @dataclass(frozen=True)
 class DeterministicExecutionService:
-    """Execute one eligible plan step through the established boundaries.
-
-    This application service coordinates existing components; it does not absorb
-    their authority. The orchestrator owns transitions, the runtime owns plugin
-    invocation, and the result integrator records plugin information as
-    authoritative execution history.
-    """
+    """Execute one eligible plan step through the established boundaries."""
 
     orchestrator: DeterministicExecutionOrchestrator
     runtime: PluginRuntime
@@ -61,8 +55,8 @@ class DeterministicExecutionService:
         """Execute at most one step and return the refreshed execution context.
 
         Created runs are started automatically. Explicit-approval steps stop at
-        ``AWAITING_APPROVAL`` and are never dispatched until approval has been
-        recorded through the orchestrator.
+        ``AWAITING_APPROVAL``. Once approved, the already-running approved step
+        is dispatched before any later dependent step is considered.
         """
 
         timestamp = _time(occurred_at)
@@ -82,19 +76,25 @@ class DeterministicExecutionService:
             )
 
         state = self.orchestrator.state(fresh)
-        step_id = state.next_step_id
-        if step_id is None:
-            return fresh
-        step = _step(fresh, step_id)
-        fresh = self.orchestrator.start_step(
-            fresh,
-            step.step_id,
-            actor=actor,
-            occurred_at=timestamp,
-        )
+        running = tuple(item.step_id for item in state.steps if item.status == StepStatus.RUNNING)
+        if len(running) > 1:
+            raise ValueError("execution state contains multiple running steps")
 
-        if self.orchestrator.state(fresh).step(step.step_id).status == StepStatus.AWAITING_APPROVAL:
-            return fresh
+        if running:
+            step = _step(fresh, running[0])
+        else:
+            step_id = state.next_step_id
+            if step_id is None:
+                return fresh
+            step = _step(fresh, step_id)
+            fresh = self.orchestrator.start_step(
+                fresh,
+                step.step_id,
+                actor=actor,
+                occurred_at=timestamp,
+            )
+            if self.orchestrator.state(fresh).step(step.step_id).status == StepStatus.AWAITING_APPROVAL:
+                return fresh
 
         try:
             result = self.runtime.execute(
