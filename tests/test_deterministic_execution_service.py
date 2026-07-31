@@ -77,6 +77,9 @@ def test_service_starts_run_executes_research_and_records_result() -> None:
 
     context = service.execute_next_step(context, actor="engine", occurred_at=NOW)
     first = context.execution_plan.steps[0]
+    artifacts = lifecycle.store.artifacts_for_run(
+        context.execution_run.execution_run_id
+    )
 
     assert context.execution_run.status == ExecutionRunStatus.RUNNING
     assert orchestrator.state(context).step(first.step_id).status == StepStatus.COMPLETED
@@ -85,7 +88,7 @@ def test_service_starts_run_executes_research_and_records_result() -> None:
         ExecutionEventType.ARTIFACT_RECORDED,
         ExecutionEventType.STEP_COMPLETED,
     ]
-    assert context.artifacts[0].name == "validated-opportunity-brief.json"
+    assert artifacts[0].name == "validated-opportunity-brief.json"
 
 
 def test_service_executes_next_plugin_with_prior_memory() -> None:
@@ -105,10 +108,13 @@ def test_service_executes_next_plugin_with_prior_memory() -> None:
         if event.event_type == ExecutionEventType.STEP_COMPLETED
         and event.step_id == second.step_id
     )
+    artifacts = lifecycle.store.artifacts_for_run(
+        context.execution_run.execution_run_id
+    )
 
     assert orchestrator.state(context).step(second.step_id).status == StepStatus.COMPLETED
     assert completion.details["result_metadata"]["prior_research_completed"] is True
-    assert {artifact.name for artifact in context.artifacts} == {
+    assert {artifact.name for artifact in artifacts} == {
         "validated-opportunity-brief.json",
         "eligibility-matrix.json",
     }
