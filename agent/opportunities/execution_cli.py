@@ -47,6 +47,11 @@ def build_parser() -> argparse.ArgumentParser:
     advance.add_argument("--max-steps", type=int, default=1)
     advance.add_argument("--actor", default="openplanter-execution-cli")
     advance.add_argument("--trace-id", default="")
+    advance.add_argument(
+        "--artifact-root",
+        type=Path,
+        help="Durable artifact directory; defaults beside the execution database",
+    )
 
     approve = subparsers.add_parser("approve", help="Approve an explicitly gated running step")
     _database_argument(approve)
@@ -115,7 +120,12 @@ def _advance(args: argparse.Namespace) -> Mapping[str, Any]:
     registry.register(ResearchExecutorPlugin())
     registry.register(EligibilityExecutorPlugin())
     orchestrator = DeterministicExecutionOrchestrator(lifecycle)
-    service = DeterministicExecutionService.create(orchestrator, PluginRuntime(registry))
+    artifact_root = args.artifact_root or (args.database.parent / "artifacts")
+    service = DeterministicExecutionService.create(
+        orchestrator,
+        PluginRuntime(registry),
+        artifact_root=artifact_root,
+    )
     report = DeterministicRunLoop(service).execute_until_checkpoint(
         context,
         actor=args.actor,
@@ -127,6 +137,7 @@ def _advance(args: argparse.Namespace) -> Mapping[str, Any]:
         "checkpoint": report.checkpoint.value,
         "steps_attempted": report.steps_attempted,
         "events_recorded": report.events_recorded,
+        "artifact_root": str(artifact_root.resolve()),
     }
 
 
@@ -156,6 +167,17 @@ def _context_summary(context, orchestrator: DeterministicExecutionOrchestrator) 
         "next_step_id": state.next_step_id,
         "event_count": len(context.events),
         "artifact_count": len(context.artifacts),
+        "artifacts": [
+            {
+                "artifact_id": artifact.artifact_id,
+                "name": artifact.name,
+                "uri": artifact.uri,
+                "media_type": artifact.media_type,
+                "checksum_sha256": artifact.checksum_sha256,
+                "step_id": artifact.step_id,
+            }
+            for artifact in context.artifacts
+        ],
         "steps": [
             {
                 "step_id": step.step_id,
