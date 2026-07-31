@@ -8,6 +8,7 @@ from .capabilities import Capability, required_capabilities
 from .eligibility import EligibilityExecutorPlugin
 from .executor import PluginRuntime
 from .integration import ExecutionResultIntegrator
+from .materialization import ArtifactMaterializer, MaterializedArtifact
 from .memory import ExecutionMemory
 from .noop import NoOpPlugin
 from .plugin import ExecutionPlugin
@@ -20,6 +21,7 @@ from .run_loop import DeterministicRunLoop, ExecutionCheckpoint, ExecutionRunRep
 from .service import DeterministicExecutionService
 
 __all__ = [
+    "ArtifactMaterializer",
     "Capability",
     "DeterministicExecutionService",
     "DeterministicRunLoop",
@@ -32,6 +34,7 @@ __all__ = [
     "ExecutionResult",
     "ExecutionResultIntegrator",
     "ExecutionRunReport",
+    "MaterializedArtifact",
     "NoOpPlugin",
     "PluginRegistrationError",
     "PluginRegistry",
