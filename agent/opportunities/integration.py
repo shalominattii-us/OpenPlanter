@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol, Sequence
 import json
 
-from .domain import EvidencePacket, MissionCandidate, Opportunity, to_primitive
+from .domain import EvidencePacket, MissionCandidate, Opportunity, QualificationStatus, to_primitive
 from .graph import MissionGraph, build_mission_graph
+from .lifecycle import ExecutionContext, ExecutionLifecycle
 from .pipeline import QualificationPolicy, UniversalIntakeAdapter, build_mission_candidate
 
 
@@ -27,14 +28,18 @@ class IntakeArtifactBundle:
     evidence_packet: EvidencePacket
     mission_candidate: MissionCandidate
     mission_graph: MissionGraph
+    execution_context: ExecutionContext | None = None
 
     def to_primitive(self) -> dict[str, Any]:
-        return {
+        payload = {
             "opportunity": to_primitive(self.opportunity),
             "evidence_packet": to_primitive(self.evidence_packet),
             "mission_candidate": to_primitive(self.mission_candidate),
             "mission_graph": self.mission_graph.to_primitive(),
         }
+        if self.execution_context is not None:
+            payload["execution_context"] = to_primitive(self.execution_context)
+        return payload
 
 
 @dataclass(frozen=True)
@@ -44,6 +49,14 @@ class DailyIntakeResult:
     report: str
     artifacts: tuple[IntakeArtifactBundle, ...]
     generated_at: datetime
+
+    @property
+    def execution_contexts(self) -> tuple[ExecutionContext, ...]:
+        return tuple(
+            bundle.execution_context
+            for bundle in self.artifacts
+            if bundle.execution_context is not None
+        )
 
 
 class ArtifactSink(Protocol):
@@ -105,46 +118,55 @@ class JsonDirectoryArtifactSink:
                 path.write_text(encoded, encoding="utf-8")
                 hashes[str(path.relative_to(run_dir))] = sha256(encoded.encode("utf-8")).hexdigest()
 
-            manifest_entries.append(
-                {
-                    "opportunity_id": bundle.opportunity.opportunity_id,
-                    "opportunity_version": bundle.opportunity.version,
-                    "evidence_packet_id": bundle.evidence_packet.evidence_packet_id,
-                    "evidence_packet_version": bundle.evidence_packet.version,
-                    "mission_candidate_id": bundle.mission_candidate.mission_candidate_id,
-                    "mission_graph_id": bundle.mission_graph.graph_id,
-                    "file": f"bundles/{bundle_file}",
-                    "files": {
-                        "opportunity": f"opportunities/{opportunity_file}",
-                        "evidence_packet": f"evidence/{evidence_file}",
-                        "mission_candidate": f"missions/{candidate_file}",
-                        "mission_graph": f"graphs/{graph_file}",
-                        "bundle": f"bundles/{bundle_file}",
-                    },
-                    "sha256": hashes,
-                }
-            )
+            manifest_entry: dict[str, Any] = {
+                "opportunity_id": bundle.opportunity.opportunity_id,
+                "opportunity_version": bundle.opportunity.version,
+                "evidence_packet_id": bundle.evidence_packet.evidence_packet_id,
+                "evidence_packet_version": bundle.evidence_packet.version,
+                "mission_candidate_id": bundle.mission_candidate.mission_candidate_id,
+                "mission_graph_id": bundle.mission_graph.graph_id,
+                "file": f"bundles/{bundle_file}",
+                "files": {
+                    "opportunity": f"opportunities/{opportunity_file}",
+                    "evidence_packet": f"evidence/{evidence_file}",
+                    "mission_candidate": f"missions/{candidate_file}",
+                    "mission_graph": f"graphs/{graph_file}",
+                    "bundle": f"bundles/{bundle_file}",
+                },
+                "sha256": hashes,
+            }
+            if bundle.execution_context is not None:
+                manifest_entry.update(
+                    {
+                        "execution_plan_id": bundle.execution_context.execution_plan.execution_plan_id,
+                        "execution_run_id": bundle.execution_context.execution_run.execution_run_id,
+                    }
+                )
+            manifest_entries.append(manifest_entry)
 
         manifest = {
             "schema_version": RUN_MANIFEST_SCHEMA_VERSION,
             "engine_version": ENGINE_VERSION,
             "generated_at": generated_at.isoformat(),
             "artifact_count": len(artifacts),
+            "execution_count": sum(
+                bundle.execution_context is not None for bundle in artifacts
+            ),
             "artifacts": manifest_entries,
         }
         manifest_text = json.dumps(manifest, indent=2, sort_keys=True)
         (run_dir / "manifest.json").write_text(manifest_text, encoding="utf-8")
-        # Alias required by the frozen v1 contract and convenient for operators.
         (run_dir / "run.json").write_text(manifest_text, encoding="utf-8")
 
 
 @dataclass(frozen=True)
 class UniversalDailyIntakeBridge:
-    """Add canonical artifacts without changing the current report renderer."""
+    """Build canonical intake artifacts and initialize qualified execution lifecycles."""
 
     adapter: UniversalIntakeAdapter
     policy: QualificationPolicy = QualificationPolicy()
     sink: ArtifactSink | None = None
+    lifecycle: ExecutionLifecycle = field(default_factory=ExecutionLifecycle.in_memory)
 
     def run(
         self,
@@ -199,9 +221,18 @@ class UniversalDailyIntakeBridge:
             evidence_packet,
             mission_candidate,
         )
+        execution_context = None
+        if mission_candidate.decision.status != QualificationStatus.REJECTED:
+            execution_context = self.lifecycle.initialize(
+                opportunity,
+                evidence_packet,
+                mission_candidate,
+                occurred_at=generated_at,
+            )
         return IntakeArtifactBundle(
             opportunity=opportunity,
             evidence_packet=evidence_packet,
             mission_candidate=mission_candidate,
             mission_graph=mission_graph,
+            execution_context=execution_context,
         )
