@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Mapping
 
 from ..execution import ExecutionStep
@@ -10,6 +11,7 @@ from ..lifecycle import ExecutionContext
 from ..orchestrator import DeterministicExecutionOrchestrator, StepStatus
 from .executor import PluginRuntime
 from .integration import ExecutionResultIntegrator
+from .materialization import ArtifactMaterializer
 
 
 _TERMINAL_RUN_STATUSES = frozenset(
@@ -35,11 +37,16 @@ class DeterministicExecutionService:
         cls,
         orchestrator: DeterministicExecutionOrchestrator,
         runtime: PluginRuntime,
+        *,
+        artifact_root: str | Path | None = None,
     ) -> "DeterministicExecutionService":
+        materializer = (
+            None if artifact_root is None else ArtifactMaterializer(Path(artifact_root))
+        )
         return cls(
             orchestrator=orchestrator,
             runtime=runtime,
-            integrator=ExecutionResultIntegrator(orchestrator),
+            integrator=ExecutionResultIntegrator(orchestrator, materializer),
         )
 
     def execute_next_step(
