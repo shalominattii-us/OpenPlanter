@@ -7,6 +7,7 @@ information through ExecutionResult and never advance workflow state.
 from .capabilities import Capability, required_capabilities
 from .eligibility import EligibilityExecutorPlugin
 from .executor import PluginRuntime
+from .integration import ExecutionResultIntegrator
 from .memory import ExecutionMemory
 from .noop import NoOpPlugin
 from .plugin import ExecutionPlugin
@@ -24,6 +25,7 @@ __all__ = [
     "ExecutionPlugin",
     "ExecutionRequest",
     "ExecutionResult",
+    "ExecutionResultIntegrator",
     "NoOpPlugin",
     "PluginRegistrationError",
     "PluginRegistry",
