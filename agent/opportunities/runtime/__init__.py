@@ -11,6 +11,7 @@ from .integration import ExecutionResultIntegrator
 from .materialization import ArtifactMaterializer, MaterializedArtifact
 from .memory import ExecutionMemory
 from .noop import NoOpPlugin
+from .offer_design import OfferDesignExecutorPlugin
 from .plugin import ExecutionPlugin
 from .registry import PluginRegistrationError, PluginRegistry, PluginResolutionError
 from .request import ExecutionRequest
@@ -36,6 +37,7 @@ __all__ = [
     "ExecutionRunReport",
     "MaterializedArtifact",
     "NoOpPlugin",
+    "OfferDesignExecutorPlugin",
     "PluginRegistrationError",
     "PluginRegistry",
     "PluginResolutionError",
