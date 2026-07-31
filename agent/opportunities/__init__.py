@@ -77,6 +77,7 @@ from .runtime import (
     route_plugin,
 )
 from .sources import OpportunitySource, SourceMetadata, collect_normalized
+from .sqlite_store import SQLiteExecutionEventStore
 
 __all__ = [
     "ApprovalRequirement",
@@ -131,6 +132,7 @@ __all__ = [
     "RUN_MANIFEST_SCHEMA_VERSION",
     "SAMGovClient",
     "SAMGovSource",
+    "SQLiteExecutionEventStore",
     "SourceMetadata",
     "StepState",
     "StepStatus",
