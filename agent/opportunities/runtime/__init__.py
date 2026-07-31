@@ -16,18 +16,22 @@ from .request import ExecutionRequest
 from .research import ResearchExecutorPlugin
 from .result import ExecutionArtifactResult, ExecutionResult
 from .routing import route_plugin
+from .run_loop import DeterministicRunLoop, ExecutionCheckpoint, ExecutionRunReport
 from .service import DeterministicExecutionService
 
 __all__ = [
     "Capability",
     "DeterministicExecutionService",
+    "DeterministicRunLoop",
     "EligibilityExecutorPlugin",
     "ExecutionArtifactResult",
+    "ExecutionCheckpoint",
     "ExecutionMemory",
     "ExecutionPlugin",
     "ExecutionRequest",
     "ExecutionResult",
     "ExecutionResultIntegrator",
+    "ExecutionRunReport",
     "NoOpPlugin",
     "PluginRegistrationError",
     "PluginRegistry",
