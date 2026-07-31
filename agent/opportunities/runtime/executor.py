@@ -34,6 +34,7 @@ def _build_memory(context: ExecutionContext) -> ExecutionMemory:
     )
     return ExecutionMemory(
         completed_steps=completed_steps,
+        artifacts=context.artifacts,
         variables={
             "execution_plan_id": context.execution_plan.execution_plan_id,
             "mission_candidate_id": context.mission_candidate.mission_candidate_id,
