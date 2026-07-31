@@ -51,6 +51,13 @@ from .integration import (
     UniversalDailyIntakeBridge,
 )
 from .lifecycle import ExecutionContext, ExecutionLifecycle
+from .orchestrator import (
+    DeterministicExecutionOrchestrator,
+    OrchestrationState,
+    StepState,
+    StepStatus,
+    replay_orchestration_state,
+)
 from .pipeline import (
     QualificationPolicy,
     UniversalIntakeAdapter,
@@ -62,6 +69,7 @@ __all__ = [
     "ApprovalRequirement",
     "ArtifactSink",
     "DailyIntakeResult",
+    "DeterministicExecutionOrchestrator",
     "ENGINE_VERSION",
     "EXECUTION_PLAN_SCHEMA_VERSION",
     "EXECUTION_RECORD_SCHEMA_VERSION",
@@ -93,6 +101,7 @@ __all__ = [
     "MissionGraphNode",
     "Opportunity",
     "OpportunitySource",
+    "OrchestrationState",
     "ProvenanceRecord",
     "QualificationDecision",
     "QualificationPolicy",
@@ -101,6 +110,8 @@ __all__ = [
     "SAMGovClient",
     "SAMGovSource",
     "SourceMetadata",
+    "StepState",
+    "StepStatus",
     "UniversalDailyIntakeBridge",
     "UniversalIntakeAdapter",
     "build_mission_candidate",
@@ -108,5 +119,6 @@ __all__ = [
     "collect_normalized",
     "derive_status",
     "normalize_sam_record",
+    "replay_orchestration_state",
     "to_primitive",
 ]
