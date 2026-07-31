@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from ..execution import ExecutionStep
-from ..lifecycle import ExecutionContext
 from .capabilities import Capability
+from .request import ExecutionRequest
 from .result import ExecutionResult
 
 
@@ -12,8 +12,8 @@ from .result import ExecutionResult
 class ExecutionPlugin(Protocol):
     """Pure execution provider contract.
 
-    Plugins perform work and return information. They never mutate the supplied
-    execution context or advance orchestration state.
+    Plugins perform work from an immutable request and return information. They
+    never receive orchestration services or advance workflow state.
     """
 
     plugin_id: str
@@ -25,9 +25,5 @@ class ExecutionPlugin(Protocol):
     def supports(self, step: ExecutionStep) -> bool:
         ...
 
-    def execute(
-        self,
-        context: ExecutionContext,
-        step: ExecutionStep,
-    ) -> ExecutionResult:
+    def execute(self, request: ExecutionRequest) -> ExecutionResult:
         ...
