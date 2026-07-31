@@ -13,6 +13,7 @@ from .lifecycle import ExecutionLifecycle
 from .orchestrator import DeterministicExecutionOrchestrator
 from .pipeline import UniversalIntakeAdapter, build_mission_candidate
 from .runtime import (
+    ApprovalGatedSubmissionExecutorPlugin,
     DeliverableBuilderExecutorPlugin,
     DeterministicExecutionService,
     DeterministicRunLoop,
@@ -125,6 +126,7 @@ def _advance(args: argparse.Namespace) -> Mapping[str, Any]:
     registry.register(OfferDesignExecutorPlugin())
     registry.register(DeliverableBuilderExecutorPlugin())
     registry.register(OutreachPreparationExecutorPlugin())
+    registry.register(ApprovalGatedSubmissionExecutorPlugin())
     orchestrator = DeterministicExecutionOrchestrator(lifecycle)
     artifact_root = args.artifact_root or (args.database.parent / "artifacts")
     service = DeterministicExecutionService.create(
