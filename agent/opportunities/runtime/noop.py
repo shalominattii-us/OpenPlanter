@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..execution import ExecutionStep
-from ..lifecycle import ExecutionContext
 from .capabilities import Capability
+from .request import ExecutionRequest
 from .result import ExecutionResult
 
 
@@ -22,15 +22,13 @@ class NoOpPlugin:
     def supports(self, step: ExecutionStep) -> bool:
         return True
 
-    def execute(
-        self,
-        context: ExecutionContext,
-        step: ExecutionStep,
-    ) -> ExecutionResult:
+    def execute(self, request: ExecutionRequest) -> ExecutionResult:
         return ExecutionResult.succeeded(
-            message=f"No-op execution completed for {step.step_id}",
+            message=f"No-op execution completed for {request.step.step_id}",
             metadata={
-                "execution_run_id": context.execution_run.execution_run_id,
-                "step_id": step.step_id,
+                "execution_run_id": request.execution_run_id,
+                "request_id": request.request_id,
+                "step_id": request.step.step_id,
+                "trace_id": request.trace_id,
             },
         )
