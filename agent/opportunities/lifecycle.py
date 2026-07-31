@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from .domain import EvidencePacket, MissionCandidate, Opportunity, QualificationStatus
 from .execution import ExecutionPlan, ExecutionPolicy
 from .execution_record import (
+    ExecutionArtifact,
     ExecutionEvent,
     ExecutionEventStore,
     ExecutionRecorder,
@@ -24,6 +25,7 @@ class ExecutionContext:
     execution_plan: ExecutionPlan
     execution_run: ExecutionRun
     events: tuple[ExecutionEvent, ...]
+    artifacts: tuple[ExecutionArtifact, ...] = ()
 
     def __post_init__(self) -> None:
         if self.evidence_packet.opportunity_id != self.opportunity.opportunity_id:
@@ -36,6 +38,8 @@ class ExecutionContext:
             raise ValueError("execution run does not belong to execution plan")
         if any(event.execution_run_id != self.execution_run.execution_run_id for event in self.events):
             raise ValueError("execution context contains events from another run")
+        if any(artifact.execution_run_id != self.execution_run.execution_run_id for artifact in self.artifacts):
+            raise ValueError("execution context contains artifacts from another run")
 
 
 class ExecutionLifecycle:
@@ -87,29 +91,25 @@ class ExecutionLifecycle:
             raise ValueError("rejected mission candidates cannot initialize execution")
 
         plan = self.policy.plan(opportunity, mission_candidate, created_at=timestamp)
-        run = self.recorder.create_for_plan(
-            plan,
-            actor=self.actor,
-            occurred_at=timestamp,
-        )
-        events = self.recorder.timeline(run.execution_run_id)
+        run = self.recorder.create_for_plan(plan, actor=self.actor, occurred_at=timestamp)
         return ExecutionContext(
             opportunity=opportunity,
             evidence_packet=evidence_packet,
             mission_candidate=mission_candidate,
             execution_plan=plan,
             execution_run=run,
-            events=events,
+            events=self.recorder.timeline(run.execution_run_id),
+            artifacts=self.store.artifacts_for_run(run.execution_run_id),
         )
 
     def refresh(self, context: ExecutionContext) -> ExecutionContext:
         run = self.store.get_run(context.execution_run.execution_run_id)
-        events = self.recorder.timeline(run.execution_run_id)
         return ExecutionContext(
             opportunity=context.opportunity,
             evidence_packet=context.evidence_packet,
             mission_candidate=context.mission_candidate,
             execution_plan=context.execution_plan,
             execution_run=run,
-            events=events,
+            events=self.recorder.timeline(run.execution_run_id),
+            artifacts=self.store.artifacts_for_run(run.execution_run_id),
         )
