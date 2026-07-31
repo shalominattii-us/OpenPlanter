@@ -13,6 +13,7 @@ from .materialization import ArtifactMaterializer, MaterializedArtifact
 from .memory import ExecutionMemory
 from .noop import NoOpPlugin
 from .offer_design import OfferDesignExecutorPlugin
+from .outreach import OutreachPreparationExecutorPlugin
 from .plugin import ExecutionPlugin
 from .registry import PluginRegistrationError, PluginRegistry, PluginResolutionError
 from .request import ExecutionRequest
@@ -40,6 +41,7 @@ __all__ = [
     "MaterializedArtifact",
     "NoOpPlugin",
     "OfferDesignExecutorPlugin",
+    "OutreachPreparationExecutorPlugin",
     "PluginRegistrationError",
     "PluginRegistry",
     "PluginResolutionError",
