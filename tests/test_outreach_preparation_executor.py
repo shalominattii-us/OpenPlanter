@@ -117,7 +117,7 @@ def test_outreach_consumes_completed_response_package(tmp_path) -> None:
         if event.step_id == completed.execution_plan.steps[4].step_id
         and event.event_type.value == "step_completed"
     )
-    source_artifacts = completed_event.details["metadata"]["source_artifacts"]
+    source_artifacts = completed_event.details["result_metadata"]["source_artifacts"]
     assert "proposal-draft.md" in source_artifacts
     assert "implementation-plan.json" in source_artifacts
     assert "budget-assumptions.json" in source_artifacts
