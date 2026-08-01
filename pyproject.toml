@@ -24,6 +24,7 @@ textual = [
 openplanter-agent = "agent.__main__:main"
 openplanter-opportunities = "agent.opportunities.runner:main"
 openplanter-execute = "agent.opportunities.execution_cli:main"
+openplanter-field-trial = "agent.opportunities.field_trial:main"
 
 [tool.setuptools.packages.find]
 include = ["agent*"]
