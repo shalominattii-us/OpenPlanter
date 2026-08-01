@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Mapping, Protocol, Sequence
 import json
 
 from .domain import EvidencePacket, MissionCandidate, Opportunity, QualificationStatus, to_primitive
+from .execution_record import InMemoryExecutionEventStore
 from .graph import MissionGraph, build_mission_graph
 from .lifecycle import ExecutionContext, ExecutionLifecycle
 from .pipeline import QualificationPolicy, UniversalIntakeAdapter, build_mission_candidate
@@ -223,7 +224,8 @@ class UniversalDailyIntakeBridge:
         )
         execution_context = None
         if mission_candidate.decision.status != QualificationStatus.REJECTED:
-            execution_context = self.lifecycle.initialize(
+            lifecycle = self._lifecycle_for_bundle()
+            execution_context = lifecycle.initialize(
                 opportunity,
                 evidence_packet,
                 mission_candidate,
@@ -236,3 +238,20 @@ class UniversalDailyIntakeBridge:
             mission_graph=mission_graph,
             execution_context=execution_context,
         )
+
+    def _lifecycle_for_bundle(self) -> ExecutionLifecycle:
+        """Isolate deterministic reference runs without altering durable stores.
+
+        The default in-memory lifecycle is a reference projection used only to
+        embed an execution context in each intake bundle. Reusing one ledger for
+        replayed or duplicate deterministic records creates false run-ID
+        collisions. A caller-supplied durable lifecycle remains shared exactly
+        as configured.
+        """
+
+        if isinstance(self.lifecycle.store, InMemoryExecutionEventStore):
+            return ExecutionLifecycle.in_memory(
+                policy=self.lifecycle.policy,
+                actor=self.lifecycle.actor,
+            )
+        return self.lifecycle
