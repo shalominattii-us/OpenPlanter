@@ -1,0 +1,23 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    OPENPLANTER_WORKSPACE=/data
+
+WORKDIR /app
+
+RUN useradd --create-home --uid 10001 openplanter \
+    && mkdir -p /data \
+    && chown -R openplanter:openplanter /data
+
+COPY pyproject.toml README.md ./
+COPY agent ./agent
+
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python -m pip install --no-cache-dir .
+
+USER openplanter
+WORKDIR /data
+
+ENTRYPOINT ["openplanter-execute"]
+CMD ["--help"]
