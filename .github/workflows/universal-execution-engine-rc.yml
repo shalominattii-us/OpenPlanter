@@ -1,0 +1,77 @@
+name: Universal Execution Engine RC
+
+on:
+  push:
+    branches:
+      - "release/universal-execution-engine-*"
+      - "feature/end-to-end-field-trial-harness"
+  pull_request:
+    paths:
+      - "agent/opportunities/**"
+      - "tests/test_*execution*.py"
+      - "tests/test_*executor.py"
+      - "tests/test_artifact_materialization.py"
+      - "pyproject.toml"
+      - "Dockerfile.execution"
+      - ".github/workflows/universal-execution-engine-rc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install package and test runner
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+      - name: Run execution engine suite
+        run: |
+          python -m pytest \
+            tests/test_opportunity_execution.py \
+            tests/test_execution_record.py \
+            tests/test_execution_lifecycle.py \
+            tests/test_execution_orchestrator.py \
+            tests/test_plugin_runtime.py \
+            tests/test_research_executor.py \
+            tests/test_eligibility_executor.py \
+            tests/test_runtime_result_integration.py \
+            tests/test_deterministic_execution_service.py \
+            tests/test_deterministic_run_loop.py \
+            tests/test_sqlite_execution_store.py \
+            tests/test_execution_context_snapshot.py \
+            tests/test_execution_cli.py \
+            tests/test_artifact_materialization.py \
+            tests/test_offer_design_executor.py \
+            tests/test_deliverable_builder_executor.py \
+            tests/test_outreach_preparation_executor.py \
+            tests/test_submission_executor.py \
+            tests/test_outcome_tracking_executor.py \
+            tests/test_execution_field_trial.py -q
+      - name: Run packaged field trial
+        run: |
+          openplanter-field-trial --workspace /tmp/openplanter-field-trial --actor ci-release-gate
+          test -f /tmp/openplanter-field-trial/execution.sqlite3
+          test "$(find /tmp/openplanter-field-trial/artifacts -type f | wc -l)" -eq 12
+      - name: Build wheel
+        run: |
+          python -m pip install build
+          python -m build
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build execution image
+        run: docker build -f Dockerfile.execution -t openplanter-execution-engine:rc .
+      - name: Verify container command
+        run: docker run --rm openplanter-execution-engine:rc --help
