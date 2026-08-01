@@ -1,10 +1,10 @@
-name: Universal Execution Engine RC
+name: Foundry Execution Engine RC
 
 on:
   push:
     branches:
       - "release/universal-execution-engine-*"
-      - "feature/end-to-end-field-trial-harness"
+      - "brand/foundry"
   pull_request:
     paths:
       - "agent/opportunities/**"
@@ -12,6 +12,7 @@ on:
       - "tests/test_*executor.py"
       - "tests/test_artifact_materialization.py"
       - "pyproject.toml"
+      - "README.md"
       - "Dockerfile.execution"
       - ".github/workflows/universal-execution-engine-rc.yml"
   workflow_dispatch:
@@ -29,10 +30,14 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - name: Install package and test runner
+      - name: Install Foundry and test runner
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e . pytest
+      - name: Verify Foundry CLI and compatibility alias
+        run: |
+          foundry --help
+          openplanter-execute --help
       - name: Run execution engine suite
         run: |
           python -m pytest \
@@ -56,11 +61,11 @@ jobs:
             tests/test_submission_executor.py \
             tests/test_outcome_tracking_executor.py \
             tests/test_execution_field_trial.py -q
-      - name: Run packaged field trial
+      - name: Run packaged Foundry field trial
         run: |
-          openplanter-field-trial --workspace /tmp/openplanter-field-trial --actor ci-release-gate
-          test -f /tmp/openplanter-field-trial/execution.sqlite3
-          test "$(find /tmp/openplanter-field-trial/artifacts -type f | wc -l)" -eq 12
+          foundry-field-trial --workspace /tmp/foundry-field-trial --actor ci-release-gate
+          test -f /tmp/foundry-field-trial/execution.sqlite3
+          test "$(find /tmp/foundry-field-trial/artifacts -type f | wc -l)" -eq 12
       - name: Build wheel
         run: |
           python -m pip install build
@@ -71,7 +76,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Build execution image
-        run: docker build -f Dockerfile.execution -t openplanter-execution-engine:rc .
+      - name: Build Foundry execution image
+        run: docker build -f Dockerfile.execution -t foundry-execution-engine:rc .
       - name: Verify container command
-        run: docker run --rm openplanter-execution-engine:rc --help
+        run: docker run --rm foundry-execution-engine:rc --help
