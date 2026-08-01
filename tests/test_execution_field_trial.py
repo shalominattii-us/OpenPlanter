@@ -28,7 +28,7 @@ def test_field_trial_artifacts_are_inspectable_and_checksummed(tmp_path) -> None
     outcome_payload = json.loads(outcome.read_text(encoding="utf-8"))
     receipt_payload = json.loads(receipt.read_text(encoding="utf-8"))
     assert outcome_payload["submission_status"] == "simulated_not_sent"
-    assert outcome_payload["recognized_revenue"] == 0
+    assert outcome_payload["financial_outcome"]["revenue_recognized"] == 0
     assert receipt_payload["approval_boundary"] == "satisfied_by_orchestrator_before_dispatch"
 
 
