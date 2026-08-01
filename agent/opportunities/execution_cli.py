@@ -19,6 +19,7 @@ from .runtime import (
     DeterministicRunLoop,
     EligibilityExecutorPlugin,
     OfferDesignExecutorPlugin,
+    OutcomeTrackingExecutorPlugin,
     OutreachPreparationExecutorPlugin,
     PluginRegistry,
     PluginRuntime,
@@ -127,6 +128,7 @@ def _advance(args: argparse.Namespace) -> Mapping[str, Any]:
     registry.register(DeliverableBuilderExecutorPlugin())
     registry.register(OutreachPreparationExecutorPlugin())
     registry.register(ApprovalGatedSubmissionExecutorPlugin())
+    registry.register(OutcomeTrackingExecutorPlugin())
     orchestrator = DeterministicExecutionOrchestrator(lifecycle)
     artifact_root = args.artifact_root or (args.database.parent / "artifacts")
     service = DeterministicExecutionService.create(
