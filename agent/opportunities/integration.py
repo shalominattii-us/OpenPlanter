@@ -1,21 +1,31 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol, Sequence
-import json
 
-from .domain import EvidencePacket, MissionCandidate, Opportunity, QualificationStatus, to_primitive
+from .domain import (
+    EvidencePacket,
+    MissionCandidate,
+    Opportunity,
+    QualificationStatus,
+    to_primitive,
+)
 from .execution_record import InMemoryExecutionEventStore
 from .graph import MissionGraph, build_mission_graph
+from .intelligence import OpportunityIntelligenceOutput, OpportunityIntelligencePipeline
 from .lifecycle import ExecutionContext, ExecutionLifecycle
-from .pipeline import QualificationPolicy, UniversalIntakeAdapter, build_mission_candidate
+from .pipeline import (
+    QualificationPolicy,
+    UniversalIntakeAdapter,
+    build_mission_candidate,
+)
 
-
-RUN_MANIFEST_SCHEMA_VERSION = "universal-opportunity-run-manifest-v1"
-ENGINE_VERSION = "universal-opportunity-engine-v1"
+RUN_MANIFEST_SCHEMA_VERSION = "universal-opportunity-run-manifest-v2"
+ENGINE_VERSION = "universal-opportunity-engine-v2"
 
 Record = Mapping[str, Any]
 ReportRenderer = Callable[[Sequence[Record]], str]
@@ -29,6 +39,7 @@ class IntakeArtifactBundle:
     evidence_packet: EvidencePacket
     mission_candidate: MissionCandidate
     mission_graph: MissionGraph
+    intelligence_output: OpportunityIntelligenceOutput | None = None
     execution_context: ExecutionContext | None = None
 
     def to_primitive(self) -> dict[str, Any]:
@@ -38,6 +49,8 @@ class IntakeArtifactBundle:
             "mission_candidate": to_primitive(self.mission_candidate),
             "mission_graph": self.mission_graph.to_primitive(),
         }
+        if self.intelligence_output is not None:
+            payload["intelligence_output"] = self.intelligence_output.to_primitive()
         if self.execution_context is not None:
             payload["execution_context"] = to_primitive(self.execution_context)
         return payload
@@ -93,6 +106,7 @@ class JsonDirectoryArtifactSink:
             "evidence_packet": run_dir / "evidence",
             "mission_candidate": run_dir / "missions",
             "mission_graph": run_dir / "graphs",
+            "intelligence_output": run_dir / "intelligence",
             "bundle": run_dir / "bundles",
         }
         for directory in directories.values():
@@ -105,6 +119,7 @@ class JsonDirectoryArtifactSink:
             candidate_file = f"{bundle.mission_candidate.mission_candidate_id}.json"
             graph_file = f"{bundle.mission_graph.graph_id}.json"
             bundle_file = f"{bundle.opportunity.opportunity_id}.json"
+            intelligence_file = f"{bundle.opportunity.opportunity_id}.json"
 
             payloads = {
                 directories["opportunity"] / opportunity_file: to_primitive(bundle.opportunity),
@@ -113,6 +128,10 @@ class JsonDirectoryArtifactSink:
                 directories["mission_graph"] / graph_file: bundle.mission_graph.to_primitive(),
                 directories["bundle"] / bundle_file: bundle.to_primitive(),
             }
+            if bundle.intelligence_output is not None:
+                payloads[
+                    directories["intelligence_output"] / intelligence_file
+                ] = bundle.intelligence_output.to_primitive()
             hashes: dict[str, str] = {}
             for path, payload in payloads.items():
                 encoded = json.dumps(payload, indent=2, sort_keys=True)
@@ -136,6 +155,19 @@ class JsonDirectoryArtifactSink:
                 },
                 "sha256": hashes,
             }
+            if bundle.intelligence_output is not None:
+                manifest_entry["files"]["intelligence_output"] = (
+                    f"intelligence/{intelligence_file}"
+                )
+                manifest_entry["intelligence"] = {
+                    "schema_version": bundle.intelligence_output.schema_version,
+                    "artifact_hash": bundle.intelligence_output.artifact_hash,
+                    "maturity_stage": bundle.intelligence_output.maturity.stage.value,
+                    "disposition": bundle.intelligence_output.maturity.disposition,
+                    "human_decision_required": (
+                        bundle.intelligence_output.maturity.human_decision_required
+                    ),
+                }
             if bundle.execution_context is not None:
                 manifest_entry.update(
                     {
@@ -153,6 +185,17 @@ class JsonDirectoryArtifactSink:
             "execution_count": sum(
                 bundle.execution_context is not None for bundle in artifacts
             ),
+            "intelligence_count": sum(
+                bundle.intelligence_output is not None for bundle in artifacts
+            ),
+            "human_review_count": sum(
+                bundle.intelligence_output is not None
+                and bundle.intelligence_output.maturity.human_decision_required
+                for bundle in artifacts
+            ),
+            "automatic_dispatches": 0,
+            "external_actions_executed": 0,
+            "treasury_labs_handoffs_executed": 0,
             "artifacts": manifest_entries,
         }
         manifest_text = json.dumps(manifest, indent=2, sort_keys=True)
@@ -168,6 +211,7 @@ class UniversalDailyIntakeBridge:
     policy: QualificationPolicy = QualificationPolicy()
     sink: ArtifactSink | None = None
     lifecycle: ExecutionLifecycle = field(default_factory=ExecutionLifecycle.in_memory)
+    intelligence_pipeline: OpportunityIntelligencePipeline | None = None
 
     def run(
         self,
@@ -222,8 +266,24 @@ class UniversalDailyIntakeBridge:
             evidence_packet,
             mission_candidate,
         )
+        intelligence_output = (
+            self.intelligence_pipeline.run(
+                opportunity,
+                evidence_packet,
+                mission_candidate,
+                evaluated_at=generated_at,
+            )
+            if self.intelligence_pipeline is not None
+            else None
+        )
         execution_context = None
-        if mission_candidate.decision.status != QualificationStatus.REJECTED:
+        intelligence_allows_execution = (
+            intelligence_output is None or intelligence_output.maturity.actionable
+        )
+        if (
+            mission_candidate.decision.status != QualificationStatus.REJECTED
+            and intelligence_allows_execution
+        ):
             lifecycle = self._lifecycle_for_bundle()
             execution_context = lifecycle.initialize(
                 opportunity,
@@ -236,6 +296,7 @@ class UniversalDailyIntakeBridge:
             evidence_packet=evidence_packet,
             mission_candidate=mission_candidate,
             mission_graph=mission_graph,
+            intelligence_output=intelligence_output,
             execution_context=execution_context,
         )
 

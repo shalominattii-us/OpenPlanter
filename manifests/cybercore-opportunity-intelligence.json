@@ -1,0 +1,110 @@
+{
+  "schema_version": "foundry-intelligence-plugin-manifest-v1",
+  "manifest_id": "foundry.cybercore.opportunity-intelligence.v1",
+  "name": "Cybercore Opportunity Intelligence Pipeline",
+  "repository": "shalominattii-us/Foundry",
+  "runtime_package": "agent.opportunities.intelligence",
+  "source_contract": {
+    "repository": "shalominattii-us/sovereign-os",
+    "commit": "f92a284f6c12fbc78bf472cc6007995ea9584e31",
+    "pipeline_spec": "CYBERCORE/opportunity_intake/docs/INTELLIGENCE_PIPELINE_SPEC_v2.md",
+    "opportunity_schema": "CYBERCORE/opportunity_intake/schema/opportunity-record.schema.json",
+    "authorization_policy": "human_required"
+  },
+  "plugins": [
+    {
+      "plugin_id": "cybercore-source-verification",
+      "version": "1.0.0",
+      "stage": "source_verification",
+      "order": 1,
+      "implementation": "agent.opportunities.intelligence.plugins.SourceVerificationPlugin",
+      "network_access": false,
+      "external_actions": false
+    },
+    {
+      "plugin_id": "cybercore-strategic-intelligence",
+      "version": "1.0.0",
+      "stage": "strategic_intelligence",
+      "order": 2,
+      "implementation": "agent.opportunities.intelligence.plugins.StrategicIntelligencePlugin",
+      "network_access": false,
+      "external_actions": false
+    },
+    {
+      "plugin_id": "cybercore-commercialization-routing",
+      "version": "1.0.0",
+      "stage": "commercialization_routing",
+      "order": 3,
+      "implementation": "agent.opportunities.intelligence.plugins.CommercializationRoutingPlugin",
+      "network_access": false,
+      "external_actions": false
+    },
+    {
+      "plugin_id": "cybercore-maturity-output",
+      "version": "1.0.0",
+      "stage": "maturity_output",
+      "order": 4,
+      "implementation": "agent.opportunities.intelligence.plugins.MaturityOutputPlugin",
+      "network_access": false,
+      "external_actions": false
+    }
+  ],
+  "policies": {
+    "strategic_intelligence": {
+      "path": "agent/opportunities/intelligence/policies/intelligence-policy-v1.json",
+      "version": "1.0.0",
+      "sha256": "da090d481fb4c711fad78285f4c7fbf0f77db83e1f387e09d44e8c4a5ef06e60"
+    },
+    "commercialization": {
+      "path": "agent/opportunities/intelligence/policies/commercialization-policy-v1.json",
+      "version": "1.0.0",
+      "sha256": "a0b3f722f59348a6fd7d38f39d71fddad113e441dd8c0ade46da59bb744adea6"
+    }
+  },
+  "output_engine": {
+    "implementation": "agent.opportunities.integration.JsonDirectoryArtifactSink",
+    "manifest_schema_version": "universal-opportunity-run-manifest-v2",
+    "output_schema_version": "cybercore-opportunity-intelligence-output-v1",
+    "directories": [
+      "opportunities",
+      "evidence",
+      "missions",
+      "graphs",
+      "intelligence",
+      "bundles"
+    ],
+    "atomic_artifact_hashing": true,
+    "immutable_run_directories": true
+  },
+  "schemas": {
+    "plugin_manifest": "schemas/cybercore/intelligence-plugin-manifest-v1.schema.json",
+    "intelligence_output": "schemas/cybercore/opportunity-intelligence-output-v1.schema.json",
+    "run_manifest": "schemas/cybercore/opportunity-run-manifest-v2.schema.json"
+  },
+  "operator_interface": {
+    "command": "foundry-cybercore",
+    "module": "agent.opportunities.intelligence.cli:main"
+  },
+  "documents": {
+    "integration_contract": "docs/cybercore/OPPORTUNITY_INTELLIGENCE_PIPELINE.md",
+    "verification": "docs/cybercore/VERIFICATION.md",
+    "fixture_guide": "examples/cybercore/README.md"
+  },
+  "interoperability_fixture": {
+    "batch": {
+      "path": "examples/cybercore/2026-08-06/AEGENTIX-CYBERCORE-OPP-INTAKE-2026-08-06.json",
+      "sha256": "cff67e819b0c417b88ff4c895c71e88683460105035d931784fa6352fdde788f"
+    },
+    "evidence": {
+      "path": "examples/cybercore/2026-08-06/source-verification-2026-08-06.json",
+      "sha256": "216575c36d9c3784de059f793702edf45f2b01b30827512344a652999432bdb6"
+    }
+  },
+  "safety": {
+    "human_authorization_required": true,
+    "automatic_dispatches": 0,
+    "external_actions_executed": 0,
+    "treasury_labs_handoffs_executed": 0,
+    "replay_side_effects": false
+  }
+}

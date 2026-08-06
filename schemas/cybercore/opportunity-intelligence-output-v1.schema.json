@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/shalominattii-us/Foundry/schemas/cybercore/opportunity-intelligence-output-v1.schema.json",
+  "title": "Cybercore Opportunity Intelligence Output v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "opportunity_id",
+    "opportunity_version",
+    "evaluated_at",
+    "evaluation_date",
+    "source_verification",
+    "strategic_intelligence",
+    "commercialization",
+    "maturity",
+    "plugin_trace",
+    "safety",
+    "artifact_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "cybercore-opportunity-intelligence-output-v1"},
+    "opportunity_id": {"type": "string", "pattern": "^opp_[a-f0-9]{20}$"},
+    "opportunity_version": {"type": "integer", "minimum": 1},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "evaluation_date": {"type": "string", "format": "date"},
+    "source_verification": {"$ref": "#/$defs/source_verification"},
+    "strategic_intelligence": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/strategic_intelligence"}
+      ]
+    },
+    "commercialization": {"$ref": "#/$defs/commercialization"},
+    "maturity": {"$ref": "#/$defs/maturity"},
+    "plugin_trace": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/plugin_trace"}
+    },
+    "safety": {"$ref": "#/$defs/safety"},
+    "artifact_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "string_array": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "source_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "temporal_status",
+        "source_authority",
+        "source_urls",
+        "verified_fields",
+        "missing_fields",
+        "evidence_hash",
+        "rationale"
+      ],
+      "properties": {
+        "status": {"enum": ["VERIFIED", "NEEDS_SOURCE_VERIFICATION"]},
+        "temporal_status": {
+          "enum": ["OPEN", "DEADLINE_TODAY", "CLOSED", "FORECAST", "PROGRAM_ONLY", "UNKNOWN"]
+        },
+        "source_authority": {"type": "string", "minLength": 1},
+        "source_urls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "format": "uri"},
+          "uniqueItems": true
+        },
+        "verified_fields": {"$ref": "#/$defs/string_array"},
+        "missing_fields": {"$ref": "#/$defs/string_array"},
+        "evidence_hash": {"$ref": "#/$defs/sha256"},
+        "rationale": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "strategic_intelligence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "policy_version",
+        "methodology",
+        "dimensions",
+        "weights",
+        "score",
+        "recommended_priority",
+        "explanation"
+      ],
+      "properties": {
+        "status": {"const": "SCORED"},
+        "policy_version": {"const": "1.0.0"},
+        "methodology": {"const": "deterministic_weighted_policy"},
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sector_fit",
+            "revenue_probability",
+            "funding_probability",
+            "implementation_complexity",
+            "strategic_alignment"
+          ],
+          "properties": {
+            "sector_fit": {"type": "number", "minimum": 0, "maximum": 100},
+            "revenue_probability": {"type": "number", "minimum": 0, "maximum": 100},
+            "funding_probability": {"type": "number", "minimum": 0, "maximum": 100},
+            "implementation_complexity": {"type": "number", "minimum": 0, "maximum": 100},
+            "strategic_alignment": {"type": "number", "minimum": 0, "maximum": 100}
+          }
+        },
+        "weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sector_fit",
+            "revenue_probability",
+            "funding_probability",
+            "implementation_feasibility",
+            "strategic_alignment"
+          ],
+          "properties": {
+            "sector_fit": {"type": "number"},
+            "revenue_probability": {"type": "number"},
+            "funding_probability": {"type": "number"},
+            "implementation_feasibility": {"type": "number"},
+            "strategic_alignment": {"type": "number"}
+          }
+        },
+        "score": {"type": "number", "minimum": 0, "maximum": 100},
+        "recommended_priority": {"enum": ["P0", "P1", "P2"]},
+        "explanation": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "commercialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "policy_version",
+        "candidate_paths",
+        "primary_path",
+        "rationale",
+        "treasury_labs_status",
+        "automatic_dispatch",
+        "handoff_executed"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "READY_FOR_HUMAN_REVIEW",
+            "MONITOR_FORECAST",
+            "CLOSED_NO_ACTION",
+            "PROGRAM_DISCOVERY_ONLY",
+            "SOURCE_VERIFICATION_REQUIRED",
+            "NO_ROUTE_IDENTIFIED"
+          ]
+        },
+        "policy_version": {"const": "1.0.0"},
+        "candidate_paths": {"$ref": "#/$defs/string_array"},
+        "primary_path": {"type": ["string", "null"]},
+        "rationale": {"$ref": "#/$defs/string_array"},
+        "treasury_labs_status": {"enum": ["HUMAN_APPROVAL_REQUIRED", "BLOCKED"]},
+        "automatic_dispatch": {"const": false},
+        "handoff_executed": {"const": false}
+      }
+    },
+    "maturity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "order", "disposition", "human_decision_required", "actionable", "reason"],
+      "properties": {
+        "stage": {
+          "enum": ["SOURCE_DISCOVERY", "STRATEGIC_INTELLIGENCE", "FORECAST_MONITOR", "PROGRAM_DISCOVERY", "HUMAN_REVIEW", "CLOSED"]
+        },
+        "order": {"type": "integer", "minimum": 1},
+        "disposition": {"type": "string", "minLength": 1},
+        "human_decision_required": {"type": "boolean"},
+        "actionable": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "plugin_trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin_id", "plugin_version", "stage", "output_hash"],
+      "properties": {
+        "plugin_id": {"type": "string", "minLength": 1},
+        "plugin_version": {"type": "string", "minLength": 1},
+        "stage": {
+          "enum": ["source_verification", "strategic_intelligence", "commercialization_routing", "maturity_output"]
+        },
+        "output_hash": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorization_policy",
+        "automatic_dispatches",
+        "external_actions_executed",
+        "treasury_labs_handoffs_executed",
+        "output_is_decision_support_only",
+        "replay_side_effects"
+      ],
+      "properties": {
+        "authorization_policy": {"const": "human_required"},
+        "automatic_dispatches": {"const": 0},
+        "external_actions_executed": {"const": 0},
+        "treasury_labs_handoffs_executed": {"const": 0},
+        "output_is_decision_support_only": {"const": true},
+        "replay_side_effects": {"const": false}
+      }
+    }
+  }
+}
