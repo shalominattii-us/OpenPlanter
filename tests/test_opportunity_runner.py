@@ -61,9 +61,19 @@ def test_run_source_writes_report_and_canonical_artifacts(tmp_path):
     run_dirs = list((tmp_path / "runs").iterdir())
     assert len(run_dirs) == 1
     manifest = json.loads((run_dirs[0] / "run.json").read_text())
+    assert manifest["schema_version"] == "universal-opportunity-run-manifest-v2"
     assert manifest["artifact_count"] == 1
-    assert manifest["artifacts"][0]["opportunity_id"]
-    assert (run_dirs[0] / manifest["artifacts"][0]["files"]["bundle"]).exists()
+    assert manifest["intelligence_count"] == 1
+    assert manifest["execution_count"] == 0
+    assert manifest["human_review_count"] == 0
+    entry = manifest["artifacts"][0]
+    assert entry["opportunity_id"]
+    assert entry["intelligence"]["maturity_stage"] == "SOURCE_DISCOVERY"
+    assert entry["intelligence"]["human_decision_required"] is False
+    assert (run_dirs[0] / entry["files"]["bundle"]).exists()
+    assert (run_dirs[0] / entry["files"]["intelligence_output"]).exists()
+    assert result.artifacts[0].intelligence_output is not None
+    assert result.artifacts[0].execution_context is None
 
 
 def test_main_requires_sam_api_key(monkeypatch):

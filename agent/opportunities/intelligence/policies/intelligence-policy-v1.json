@@ -1,0 +1,152 @@
+{
+  "version": "1.0.0",
+  "description": "Deterministic AEGENTIX Cybercore opportunity intelligence policy; values are explainable heuristics, not statistical probabilities.",
+  "weights": {
+    "sector_fit": 0.25,
+    "revenue_probability": 0.2,
+    "funding_probability": 0.2,
+    "implementation_feasibility": 0.15,
+    "strategic_alignment": 0.2
+  },
+  "priority_thresholds": {
+    "P0": 80,
+    "P1": 65
+  },
+  "defaults": {
+    "sector_fit": 55,
+    "strategic_signal": 55
+  },
+  "sector_alignment": [
+    {
+      "score": 95,
+      "keywords": [
+        "artificial intelligence",
+        "ai infrastructure",
+        "assured access technology",
+        "maritime domain awareness",
+        "space technology",
+        "cyber",
+        "autonomous",
+        "robotic",
+        "supply-chain analytics"
+      ]
+    },
+    {
+      "score": 85,
+      "keywords": [
+        "energy technology",
+        "research infrastructure",
+        "aviation infrastructure",
+        "transit infrastructure",
+        "maritime safety",
+        "innovation commercialization"
+      ]
+    },
+    {
+      "score": 75,
+      "keywords": [
+        "biomedical research",
+        "neuroscience",
+        "disability",
+        "education infrastructure",
+        "community systems",
+        "housing",
+        "international development procurement",
+        "international development consulting"
+      ]
+    },
+    {
+      "score": 60,
+      "keywords": [
+        "agriculture",
+        "public diplomacy"
+      ]
+    }
+  ],
+  "strategic_tier_scores": {
+    "Tier 1": 95,
+    "Tier 2": 75,
+    "Tier 3": 50,
+    "Unassessed": 55
+  },
+  "priority_signal_scores": {
+    "P0": 95,
+    "P1": 75,
+    "P2": 50,
+    "UNPRIORITIZED": 55
+  },
+  "type_baselines": {
+    "funding": {
+      "revenue_probability": 55,
+      "funding_probability": 68,
+      "implementation_complexity": 62
+    },
+    "procurement": {
+      "revenue_probability": 76,
+      "funding_probability": 62,
+      "implementation_complexity": 68
+    },
+    "challenge_prize": {
+      "revenue_probability": 58,
+      "funding_probability": 48,
+      "implementation_complexity": 55
+    },
+    "technology_need": {
+      "revenue_probability": 70,
+      "funding_probability": 55,
+      "implementation_complexity": 72
+    }
+  },
+  "procurement_adjustments": {
+    "CSO": {
+      "revenue_probability": 6,
+      "funding_probability": 4,
+      "implementation_complexity": -8
+    },
+    "consulting": {
+      "revenue_probability": 2,
+      "funding_probability": 0,
+      "implementation_complexity": -5
+    },
+    "cooperative_agreement": {
+      "revenue_probability": -2,
+      "funding_probability": 4,
+      "implementation_complexity": 4
+    }
+  },
+  "temporal_adjustments": {
+    "OPEN": {
+      "revenue_probability": 8,
+      "funding_probability": 6
+    },
+    "DEADLINE_TODAY": {
+      "revenue_probability": -18,
+      "funding_probability": -12,
+      "implementation_complexity": 10
+    },
+    "CLOSED": {
+      "revenue_probability": -60,
+      "funding_probability": -60
+    },
+    "FORECAST": {
+      "revenue_probability": -10,
+      "funding_probability": -6
+    },
+    "PROGRAM_ONLY": {
+      "revenue_probability": -35,
+      "funding_probability": -30
+    },
+    "UNKNOWN": {
+      "revenue_probability": -30,
+      "funding_probability": -30
+    }
+  },
+  "complexity_rules": {
+    "per_eligibility_item": 2,
+    "per_compliance_item": 3,
+    "per_registration_item": 3,
+    "international_jurisdiction": 8,
+    "consortium_or_partnership": 8,
+    "maximum_adjustment": 25
+  }
+}

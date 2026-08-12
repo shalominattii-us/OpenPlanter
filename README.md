@@ -17,6 +17,16 @@ Evidence
     ↓
 Qualification
     ↓
+Source Verification
+    ↓
+Strategic Intelligence
+    ↓
+Commercialization Routing
+    ↓
+Opportunity Maturity
+    ↓
+Human Review
+    ↓
 Execution Plan
     ↓
 Research
@@ -61,6 +71,31 @@ RC1 includes:
 - Python wheel, source distribution, and non-root Docker runtime
 
 The RC1 submission transport is intentionally local and simulated. It requires explicit approval and produces an authoritative receipt, but it does not send email, call a portal, or submit to an external API.
+
+## Cybercore Opportunity Intelligence
+
+Foundry now hosts the executable **Cybercore Opportunity Intelligence Pipeline** as a native four-plugin composition. The pipeline performs strict source verification, deterministic strategic scoring, commercialization routing, and opportunity-maturity classification before any record can enter execution. The canonical integration contract is documented in [`docs/cybercore/OPPORTUNITY_INTELLIGENCE_PIPELINE.md`](docs/cybercore/OPPORTUNITY_INTELLIGENCE_PIPELINE.md).
+
+| Native component | Repository path |
+|---|---|
+| Plugin contracts and implementations | `agent/opportunities/intelligence/` |
+| Versioned scoring and routing policies | `agent/opportunities/intelligence/policies/` |
+| Cross-repository Cybercore adapter | `agent/opportunities/intelligence/cybercore.py` |
+| Immutable maturity output engine | `agent/opportunities/integration.py` |
+| Plugin and ownership manifest | `manifests/cybercore-opportunity-intelligence.json` |
+| Machine-readable schemas | `schemas/cybercore/` |
+
+Run the committed 22-record Cybercore acceptance batch with:
+
+```bash
+foundry-cybercore \
+  --batch examples/cybercore/2026-08-06/AEGENTIX-CYBERCORE-OPP-INTAKE-2026-08-06.json \
+  --evidence examples/cybercore/2026-08-06/source-verification-2026-08-06.json \
+  --output-root var/opportunities/cybercore-runs \
+  --evaluated-at 2026-08-06T17:32:17Z
+```
+
+Only records classified as `HUMAN_REVIEW` may initialize execution contexts. The intelligence layer always records zero automatic dispatches, zero external actions, and zero Treasury Labs handoffs. Complete test, schema, package, real-data, and cross-repository parity evidence is recorded in [`docs/cybercore/VERIFICATION.md`](docs/cybercore/VERIFICATION.md).
 
 ## Quick Start
 
@@ -144,7 +179,9 @@ python -m pytest \
   tests/test_outreach_preparation_executor.py \
   tests/test_submission_executor.py \
   tests/test_outcome_tracking_executor.py \
-  tests/test_execution_field_trial.py -q
+  tests/test_execution_field_trial.py \
+  tests/test_cybercore_intelligence.py \
+  tests/test_cybercore_batch_integration.py -q
 ```
 
 ## License

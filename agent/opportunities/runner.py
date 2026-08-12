@@ -11,7 +11,12 @@ from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
 from .adapters.sam_gov import SAMGovClient, SAMGovSource
-from .integration import DailyIntakeResult, JsonDirectoryArtifactSink, UniversalDailyIntakeBridge
+from .integration import (
+    DailyIntakeResult,
+    JsonDirectoryArtifactSink,
+    UniversalDailyIntakeBridge,
+)
+from .intelligence import OpportunityIntelligencePipeline
 from .pipeline import UniversalIntakeAdapter
 from .sources import OpportunitySource, collect_normalized
 
@@ -68,6 +73,7 @@ def run_source(
             source_url=metadata.source_url,
         ),
         sink=JsonDirectoryArtifactSink(output_root),
+        intelligence_pipeline=OpportunityIntelligencePipeline.default(),
     )
     result = bridge.run(
         records,
