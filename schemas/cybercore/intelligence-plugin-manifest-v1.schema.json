@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/shalominattii-us/Foundry/schemas/cybercore/intelligence-plugin-manifest-v1.schema.json",
+  "title": "Foundry Cybercore Intelligence Plugin Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "name",
+    "repository",
+    "runtime_package",
+    "source_contract",
+    "plugins",
+    "policies",
+    "output_engine",
+    "schemas",
+    "operator_interface",
+    "documents",
+    "interoperability_fixture",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"const": "foundry-intelligence-plugin-manifest-v1"},
+    "manifest_id": {"const": "foundry.cybercore.opportunity-intelligence.v1"},
+    "name": {"type": "string", "minLength": 1},
+    "repository": {"const": "shalominattii-us/Foundry"},
+    "runtime_package": {"const": "agent.opportunities.intelligence"},
+    "source_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "pipeline_spec", "opportunity_schema", "authorization_policy"],
+      "properties": {
+        "repository": {"const": "shalominattii-us/sovereign-os"},
+        "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "pipeline_spec": {"type": "string", "minLength": 1},
+        "opportunity_schema": {"type": "string", "minLength": 1},
+        "authorization_policy": {"const": "human_required"}
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"$ref": "#/$defs/source_plugin"},
+        {"$ref": "#/$defs/score_plugin"},
+        {"$ref": "#/$defs/route_plugin"},
+        {"$ref": "#/$defs/maturity_plugin"}
+      ],
+      "items": false
+    },
+    "policies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategic_intelligence", "commercialization"],
+      "properties": {
+        "strategic_intelligence": {"$ref": "#/$defs/policy"},
+        "commercialization": {"$ref": "#/$defs/policy"}
+      }
+    },
+    "output_engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementation", "manifest_schema_version", "output_schema_version", "directories", "atomic_artifact_hashing", "immutable_run_directories"],
+      "properties": {
+        "implementation": {"const": "agent.opportunities.integration.JsonDirectoryArtifactSink"},
+        "manifest_schema_version": {"const": "universal-opportunity-run-manifest-v2"},
+        "output_schema_version": {"const": "cybercore-opportunity-intelligence-output-v1"},
+        "directories": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {"enum": ["opportunities", "evidence", "missions", "graphs", "intelligence", "bundles"]}
+        },
+        "atomic_artifact_hashing": {"const": true},
+        "immutable_run_directories": {"const": true}
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin_manifest", "intelligence_output", "run_manifest"],
+      "properties": {
+        "plugin_manifest": {"type": "string", "minLength": 1},
+        "intelligence_output": {"type": "string", "minLength": 1},
+        "run_manifest": {"type": "string", "minLength": 1}
+      }
+    },
+    "operator_interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "module"],
+      "properties": {
+        "command": {"const": "foundry-cybercore"},
+        "module": {"const": "agent.opportunities.intelligence.cli:main"}
+      }
+    },
+    "documents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["integration_contract", "verification", "fixture_guide"],
+      "properties": {
+        "integration_contract": {"const": "docs/cybercore/OPPORTUNITY_INTELLIGENCE_PIPELINE.md"},
+        "verification": {"const": "docs/cybercore/VERIFICATION.md"},
+        "fixture_guide": {"const": "examples/cybercore/README.md"}
+      }
+    },
+    "interoperability_fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["batch", "evidence"],
+      "properties": {
+        "batch": {"$ref": "#/$defs/fixture"},
+        "evidence": {"$ref": "#/$defs/fixture"}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["human_authorization_required", "automatic_dispatches", "external_actions_executed", "treasury_labs_handoffs_executed", "replay_side_effects"],
+      "properties": {
+        "human_authorization_required": {"const": true},
+        "automatic_dispatches": {"const": 0},
+        "external_actions_executed": {"const": 0},
+        "treasury_labs_handoffs_executed": {"const": 0},
+        "replay_side_effects": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "plugin_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin_id", "version", "stage", "order", "implementation", "network_access", "external_actions"],
+      "properties": {
+        "plugin_id": {"type": "string", "minLength": 1},
+        "version": {"const": "1.0.0"},
+        "stage": {"type": "string"},
+        "order": {"type": "integer", "minimum": 1, "maximum": 4},
+        "implementation": {"type": "string", "minLength": 1},
+        "network_access": {"const": false},
+        "external_actions": {"const": false}
+      }
+    },
+    "source_plugin": {
+      "allOf": [
+        {"$ref": "#/$defs/plugin_base"},
+        {"properties": {"plugin_id": {"const": "cybercore-source-verification"}, "stage": {"const": "source_verification"}, "order": {"const": 1}}}
+      ]
+    },
+    "score_plugin": {
+      "allOf": [
+        {"$ref": "#/$defs/plugin_base"},
+        {"properties": {"plugin_id": {"const": "cybercore-strategic-intelligence"}, "stage": {"const": "strategic_intelligence"}, "order": {"const": 2}}}
+      ]
+    },
+    "route_plugin": {
+      "allOf": [
+        {"$ref": "#/$defs/plugin_base"},
+        {"properties": {"plugin_id": {"const": "cybercore-commercialization-routing"}, "stage": {"const": "commercialization_routing"}, "order": {"const": 3}}}
+      ]
+    },
+    "maturity_plugin": {
+      "allOf": [
+        {"$ref": "#/$defs/plugin_base"},
+        {"properties": {"plugin_id": {"const": "cybercore-maturity-output"}, "stage": {"const": "maturity_output"}, "order": {"const": 4}}}
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "version", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "version": {"const": "1.0.0"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

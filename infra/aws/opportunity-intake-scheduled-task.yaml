@@ -1,0 +1,343 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Hardened scheduled OpenPlanter opportunity intake task on ECS Fargate.
+
+Parameters:
+  ClusterArn:
+    Type: String
+    Description: ARN of the existing ECS cluster.
+  ContainerImage:
+    Type: String
+    Description: Immutable ECR image URI, preferably pinned by digest.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  EfsSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group attached to the EFS mount targets; must allow NFS from TaskSecurityGroup.
+  ScheduleExpression:
+    Type: String
+    Default: cron(0 6 * * ? *)
+  ScheduleTimezone:
+    Type: String
+    Default: UTC
+  SamGovApiKeySecretArn:
+    Type: String
+    NoEcho: true
+    Description: ARN of an existing Secrets Manager secret containing the SAM.gov API key as its full value.
+  LogRetentionDays:
+    Type: Number
+    Default: 30
+  Cpu:
+    Type: String
+    Default: '1024'
+  Memory:
+    Type: String
+    Default: '2048'
+  TaskCount:
+    Type: Number
+    Default: 1
+  NotificationEmail:
+    Type: String
+    Default: ''
+    Description: Optional email address for failure notifications.
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, '']]
+
+Resources:
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Outbound-only security group for OpenPlanter opportunity intake.
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          DestinationSecurityGroupId: !Ref EfsSecurityGroupId
+
+  ArtifactFileSystem:
+    Type: AWS::EFS::FileSystem
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Encrypted: true
+      BackupPolicy:
+        Status: ENABLED
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+      FileSystemTags:
+        - Key: Name
+          Value: openplanter-opportunity-artifacts
+
+  ArtifactAccessPoint:
+    Type: AWS::EFS::AccessPoint
+    Properties:
+      FileSystemId: !Ref ArtifactFileSystem
+      PosixUser:
+        Uid: '1000'
+        Gid: '1000'
+      RootDirectory:
+        Path: /openplanter/opportunities
+        CreationInfo:
+          OwnerUid: '1000'
+          OwnerGid: '1000'
+          Permissions: '0750'
+
+  MountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ArtifactFileSystem
+      SubnetId: !Select [0, !Ref PrivateSubnetIds]
+      SecurityGroups:
+        - !Ref EfsSecurityGroupId
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/openplanter/opportunity-intake
+      RetentionInDays: !Ref LogRetentionDays
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: ReadSamGovSecret
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref SamGovApiKeySecretArn
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EfsArtifactAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - elasticfilesystem:ClientMount
+                  - elasticfilesystem:ClientWrite
+                Resource: !GetAtt ArtifactFileSystem.Arn
+                Condition:
+                  StringEquals:
+                    elasticfilesystem:AccessPointArn: !GetAtt ArtifactAccessPoint.Arn
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn:
+      - MountTargetA
+    Properties:
+      Family: openplanter-opportunity-intake
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: opportunity-artifacts
+          EFSVolumeConfiguration:
+            FilesystemId: !Ref ArtifactFileSystem
+            TransitEncryption: ENABLED
+            AuthorizationConfig:
+              AccessPointId: !Ref ArtifactAccessPoint
+              IAM: ENABLED
+      ContainerDefinitions:
+        - Name: opportunity-intake
+          Image: !Ref ContainerImage
+          Essential: true
+          ReadonlyRootFilesystem: true
+          Command:
+            - --output-root
+            - /mnt/opportunities/runs
+            - --report-path
+            - /mnt/opportunities/reports/latest-report.json
+          Environment:
+            - Name: LOG_LEVEL
+              Value: INFO
+            - Name: OPENPLANTER_DEPLOYMENT_ENV
+              Value: production
+          Secrets:
+            - Name: SAM_GOV_API_KEY
+              ValueFrom: !Ref SamGovApiKeySecretArn
+          MountPoints:
+            - SourceVolume: opportunity-artifacts
+              ContainerPath: /mnt/opportunities
+              ReadOnly: false
+          LinuxParameters:
+            InitProcessEnabled: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: intake
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - test -w /mnt/opportunities || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 20
+
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: openplanter-opportunity-intake-dlq
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: RunOpportunityTask
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ecs:RunTask
+                Resource: !Ref TaskDefinition
+                Condition:
+                  ArnEquals:
+                    ecs:cluster: !Ref ClusterArn
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource:
+                  - !GetAtt ExecutionRole.Arn
+                  - !GetAtt TaskRole.Arn
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt DeadLetterQueue.Arn
+
+  IntakeSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: openplanter-opportunity-intake-daily
+      Description: Runs the Universal Opportunity intake once per day.
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      ScheduleExpression: !Ref ScheduleExpression
+      ScheduleExpressionTimezone: !Ref ScheduleTimezone
+      State: ENABLED
+      Target:
+        Arn: !Ref ClusterArn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        DeadLetterConfig:
+          Arn: !GetAtt DeadLetterQueue.Arn
+        RetryPolicy:
+          MaximumEventAgeInSeconds: 3600
+          MaximumRetryAttempts: 2
+        EcsParameters:
+          TaskDefinitionArn: !Ref TaskDefinition
+          TaskCount: !Ref TaskCount
+          LaunchType: FARGATE
+          PlatformVersion: LATEST
+          NetworkConfiguration:
+            AwsvpcConfiguration:
+              AssignPublicIp: DISABLED
+              Subnets: !Ref PrivateSubnetIds
+              SecurityGroups:
+                - !Ref TaskSecurityGroup
+
+  FailureTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: openplanter-opportunity-intake-failures
+
+  FailureSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+      TopicArn: !Ref FailureTopic
+
+  TaskFailureRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Publishes failed OpenPlanter ECS task stops.
+      EventPattern:
+        source:
+          - aws.ecs
+        detail-type:
+          - ECS Task State Change
+        detail:
+          clusterArn:
+            - !Ref ClusterArn
+          lastStatus:
+            - STOPPED
+          containers:
+            exitCode:
+              - anything-but: 0
+      Targets:
+        - Arn: !Ref FailureTopic
+          Id: failure-topic
+
+  EventsPublishRole:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref FailureTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref FailureTopic
+
+Outputs:
+  TaskDefinitionArn:
+    Value: !Ref TaskDefinition
+  ScheduleArn:
+    Value: !GetAtt IntakeSchedule.Arn
+  ArtifactFileSystemId:
+    Value: !Ref ArtifactFileSystem
+  ArtifactAccessPointId:
+    Value: !Ref ArtifactAccessPoint
+  TaskSecurityGroupId:
+    Value: !Ref TaskSecurityGroup
+  DeadLetterQueueUrl:
+    Value: !Ref DeadLetterQueue
+  FailureTopicArn:
+    Value: !Ref FailureTopic

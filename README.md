@@ -1,249 +1,189 @@
-# OpenPlanter
+# Foundry
 
-A recursive-language-model investigation agent with a desktop GUI and terminal interface. OpenPlanter ingests heterogeneous datasets — corporate registries, campaign finance records, lobbying disclosures, government contracts, and more — resolves entities across them, and surfaces non-obvious connections through evidence-backed analysis. It operates autonomously with file I/O, shell execution, web search, and recursive sub-agent delegation.
+## From opportunity to outcome.
 
-![OpenPlanter Desktop](screenshot.png)
+Foundry is an autonomous execution platform for turning qualified opportunities into durable, reviewable outcomes.
 
-## Download
+Give Foundry an opportunity. It researches the problem, evaluates eligibility, designs a mutually beneficial offer, builds the response package, prepares outreach, stops at explicit approval boundaries, records submission evidence, and tracks the result.
 
-Pre-built binaries are available on the [Releases page](https://github.com/ShinMegamiBoson/OpenPlanter/releases/latest):
+Every execution is deterministic, inspectable, restart-safe, and artifact-producing.
 
-- **macOS** — `.dmg`
-- **Windows** — `.msi`
-- **Linux** — `.AppImage`
+## What Foundry Does
 
-## Desktop App
+```text
+Opportunity
+    ↓
+Evidence
+    ↓
+Qualification
+    ↓
+Source Verification
+    ↓
+Strategic Intelligence
+    ↓
+Commercialization Routing
+    ↓
+Opportunity Maturity
+    ↓
+Human Review
+    ↓
+Execution Plan
+    ↓
+Research
+    ↓
+Eligibility
+    ↓
+Offer Design
+    ↓
+Deliverables
+    ↓
+Outreach Preparation
+    ↓
+Explicit Approval
+    ↓
+Submission Receipt
+    ↓
+Outcome Record
+```
 
-The desktop app (`openplanter-desktop/`) is a Tauri 2 application with a three-pane layout:
+Foundry is designed for companies, government contractors, public institutions, teams, and individuals that need a governed path from discovery to execution.
 
-- **Sidebar** — Session management, provider/model settings, and API credential status
-- **Chat pane** — Conversational interface showing the agent's objectives, reasoning steps, tool calls, and findings with syntax-highlighted code blocks
-- **Knowledge graph** — Interactive Cytoscape.js visualization of entities and relationships discovered during investigation. Nodes are color-coded by category (corporate, campaign-finance, lobbying, contracts, sanctions, etc.). Click a source node to open a slide-out drawer with the full rendered wiki document.
+## Core Principles
 
-### Features
+- **Execution over suggestion** — Foundry produces usable work and durable artifacts.
+- **Human authority at consequential boundaries** — external action remains approval-gated.
+- **Deterministic orchestration** — the engine owns state, ordering, retries, and completion.
+- **Replayable evidence** — runs, events, artifacts, checksums, and outcomes are preserved.
+- **Composable executors** — plugins perform bounded work without gaining orchestration authority.
+- **Portable operation** — the same engine runs through Python, CLI, SQLite, and containers.
 
-- **Live knowledge graph** — Entities and connections render in real time as the agent works. Switch between force-directed, hierarchical, and circular layouts. Search and filter by category.
-- **Wiki source drawer** — Click any source node to read the full markdown document in a slide-out panel. Internal wiki links navigate between documents and focus the corresponding graph node.
-- **Session persistence** — Investigations are saved automatically. Resume previous sessions or start new ones from the sidebar.
-- **Background wiki curator** — A lightweight agent runs in the background to keep wiki documents consistent and cross-linked.
-- **Multi-provider support** — Switch between OpenAI, Anthropic, OpenRouter, Cerebras, and Ollama (local) from the sidebar.
+## Current Release Candidate
 
-### Building from Source
+RC1 includes:
+
+- canonical opportunity, evidence, qualification, plan, run, event, artifact, and outcome contracts
+- deterministic execution service and bounded run loop
+- durable SQLite execution ledger
+- immutable context snapshots and restart-safe continuation
+- research, eligibility, offer-design, deliverable, outreach, submission, and outcome executors
+- atomic artifact materialization with SHA-256 verification
+- operational CLI and end-to-end field-trial harness
+- Python wheel, source distribution, and non-root Docker runtime
+
+The RC1 submission transport is intentionally local and simulated. It requires explicit approval and produces an authoritative receipt, but it does not send email, call a portal, or submit to an external API.
+
+## Cybercore Opportunity Intelligence
+
+Foundry now hosts the executable **Cybercore Opportunity Intelligence Pipeline** as a native four-plugin composition. The pipeline performs strict source verification, deterministic strategic scoring, commercialization routing, and opportunity-maturity classification before any record can enter execution. The canonical integration contract is documented in [`docs/cybercore/OPPORTUNITY_INTELLIGENCE_PIPELINE.md`](docs/cybercore/OPPORTUNITY_INTELLIGENCE_PIPELINE.md).
+
+| Native component | Repository path |
+|---|---|
+| Plugin contracts and implementations | `agent/opportunities/intelligence/` |
+| Versioned scoring and routing policies | `agent/opportunities/intelligence/policies/` |
+| Cross-repository Cybercore adapter | `agent/opportunities/intelligence/cybercore.py` |
+| Immutable maturity output engine | `agent/opportunities/integration.py` |
+| Plugin and ownership manifest | `manifests/cybercore-opportunity-intelligence.json` |
+| Machine-readable schemas | `schemas/cybercore/` |
+
+Run the committed 22-record Cybercore acceptance batch with:
 
 ```bash
-cd openplanter-desktop
-
-# Install frontend dependencies
-cd frontend && npm install && cd ..
-
-# Run in development mode
-cargo tauri dev
-
-# Build distributable binary
-cargo tauri build
+foundry-cybercore \
+  --batch examples/cybercore/2026-08-06/AEGENTIX-CYBERCORE-OPP-INTAKE-2026-08-06.json \
+  --evidence examples/cybercore/2026-08-06/source-verification-2026-08-06.json \
+  --output-root var/opportunities/cybercore-runs \
+  --evaluated-at 2026-08-06T17:32:17Z
 ```
 
-Requires: Rust stable, Node.js 20+, and platform-specific Tauri dependencies ([see Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)).
+Only records classified as `HUMAN_REVIEW` may initialize execution contexts. The intelligence layer always records zero automatic dispatches, zero external actions, and zero Treasury Labs handoffs. Complete test, schema, package, real-data, and cross-repository parity evidence is recorded in [`docs/cybercore/VERIFICATION.md`](docs/cybercore/VERIFICATION.md).
 
-## CLI Agent
-
-The Python CLI agent can be used independently of the desktop app.
-
-### Quickstart
+## Quick Start
 
 ```bash
-# Install
-pip install -e .
-
-# Configure API keys (interactive prompt)
-openplanter-agent --configure-keys
-
-# Launch the TUI
-openplanter-agent --workspace /path/to/your/project
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
 ```
 
-Or run a single task headlessly:
+Run the complete local field trial:
 
 ```bash
-openplanter-agent --task "Cross-reference vendor payments against lobbying disclosures and flag overlaps" --workspace ./data
+foundry-field-trial \
+  --workspace var/foundry/field-trial-001 \
+  --actor foundry-operator
 ```
 
-### Docker
+Operate a durable execution directly:
 
 ```bash
-# Add your API keys to .env, then:
-docker compose up
+foundry init --help
+foundry status --help
+foundry advance --help
+foundry approve --help
 ```
 
-The container mounts `./workspace` as the agent's working directory.
+## Durable Outputs
 
-## Supported Providers
+A completed execution produces a traceable set of artifacts, including:
 
-| Provider | Default Model | Env Var |
-|----------|---------------|---------|
-| OpenAI | `gpt-5.2` | `OPENAI_API_KEY` |
-| Anthropic | `claude-opus-4-6` | `ANTHROPIC_API_KEY` |
-| OpenRouter | `anthropic/claude-sonnet-4-5` | `OPENROUTER_API_KEY` |
-| Cerebras | `qwen-3-235b-a22b-instruct-2507` | `CEREBRAS_API_KEY` |
-| Ollama | `llama3.2` | (none — local) |
+- validated opportunity brief
+- eligibility matrix
+- offer design
+- value model
+- proposal draft
+- implementation plan
+- budget assumptions
+- outreach draft
+- submission checklist
+- contact brief
+- submission receipt
+- outcome record
 
-### Local Models (Ollama)
+Each materialized artifact is recorded with its exact file URI, byte size, checksum, producing step, and execution lineage.
 
-[Ollama](https://ollama.com) runs models locally with no API key. Install Ollama, pull a model (`ollama pull llama3.2`), then:
+## Container
 
 ```bash
-openplanter-agent --provider ollama
-openplanter-agent --provider ollama --model mistral
-openplanter-agent --provider ollama --list-models
+docker build -f Dockerfile.execution -t foundry-execution-engine:rc1 .
+docker run --rm foundry-execution-engine:rc1 --help
 ```
 
-The base URL defaults to `http://localhost:11434/v1` and can be overridden with `OPENPLANTER_OLLAMA_BASE_URL` or `--base-url`. The first request may be slow while Ollama loads the model into memory; a 120-second first-byte timeout is used automatically.
+Mount a durable workspace at `/data` for ledgers and artifacts.
 
-Additional service keys: `EXA_API_KEY` (web search), `VOYAGE_API_KEY` (embeddings).
+## Compatibility
 
-All keys can also be set with an `OPENPLANTER_` prefix (e.g. `OPENPLANTER_OPENAI_API_KEY`), via `.env` files in the workspace, or via CLI flags.
-
-## Agent Tools
-
-The agent has access to 19 tools, organized around its investigation workflow:
-
-**Dataset ingestion & workspace** — `list_files`, `search_files`, `repo_map`, `read_file`, `write_file`, `edit_file`, `hashline_edit`, `apply_patch` — load, inspect, and transform source datasets; write structured findings.
-
-**Shell execution** — `run_shell`, `run_shell_bg`, `check_shell_bg`, `kill_shell_bg` — run analysis scripts, data pipelines, and validation checks.
-
-**Web** — `web_search` (Exa), `fetch_url` — pull public records, verify entities, and retrieve supplementary data.
-
-**Planning & delegation** — `think`, `subtask`, `execute`, `list_artifacts`, `read_artifact` — decompose investigations into focused sub-tasks, each with acceptance criteria and independent verification.
-
-In **recursive mode** (the default), the agent spawns sub-agents via `subtask` and `execute` to parallelize entity resolution, cross-dataset linking, and evidence-chain construction across large investigations.
-
-## CLI Reference
-
-```
-openplanter-agent [options]
-```
-
-### Workspace & Session
-
-| Flag | Description |
-|------|-------------|
-| `--workspace DIR` | Workspace root (default: `.`) |
-| `--session-id ID` | Use a specific session ID |
-| `--resume` | Resume the latest (or specified) session |
-| `--list-sessions` | List saved sessions and exit |
-
-### Model Selection
-
-| Flag | Description |
-|------|-------------|
-| `--provider NAME` | `auto`, `openai`, `anthropic`, `openrouter`, `cerebras`, `ollama` |
-| `--model NAME` | Model name or `newest` to auto-select |
-| `--reasoning-effort LEVEL` | `low`, `medium`, `high`, or `none` |
-| `--list-models` | Fetch available models from the provider API |
-
-### Execution
-
-| Flag | Description |
-|------|-------------|
-| `--task OBJECTIVE` | Run a single task and exit (headless) |
-| `--recursive` | Enable recursive sub-agent delegation |
-| `--acceptance-criteria` | Judge subtask results with a lightweight model |
-| `--max-depth N` | Maximum recursion depth (default: 4) |
-| `--max-steps N` | Maximum steps per call (default: 100) |
-| `--timeout N` | Shell command timeout in seconds (default: 45) |
-
-### UI
-
-| Flag | Description |
-|------|-------------|
-| `--no-tui` | Plain REPL (no colors or spinner) |
-| `--headless` | Non-interactive mode (for CI) |
-| `--demo` | Censor entity names and workspace paths in output |
-
-### Persistent Defaults
-
-Use `--default-model`, `--default-reasoning-effort`, or per-provider variants like `--default-model-openai` to save workspace defaults to `.openplanter/settings.json`. View them with `--show-settings`.
-
-## Configuration
-
-Keys are resolved in this priority order (highest wins):
-
-1. CLI flags (`--openai-api-key`, etc.)
-2. Environment variables (`OPENAI_API_KEY` or `OPENPLANTER_OPENAI_API_KEY`)
-3. `.env` file in the workspace
-4. Workspace credential store (`.openplanter/credentials.json`)
-5. User credential store (`~/.openplanter/credentials.json`)
-
-All runtime settings can also be set via `OPENPLANTER_*` environment variables (e.g. `OPENPLANTER_MAX_DEPTH=8`).
-
-## Project Structure
-
-```
-openplanter-desktop/         Tauri 2 desktop application
-  crates/
-    op-tauri/                 Tauri backend (Rust)
-      src/commands/           IPC command handlers (agent, wiki, config)
-    op-core/                  Shared core library
-  frontend/                   TypeScript/Vite frontend
-    src/components/           UI components (ChatPane, GraphPane, InputBar, Sidebar)
-    src/graph/                Cytoscape.js graph rendering
-    src/api/                  Tauri IPC wrappers
-    e2e/                      Playwright E2E tests
-
-agent/                        Python CLI agent
-  __main__.py                 CLI entry point and REPL
-  engine.py                   Recursive language model engine
-  runtime.py                  Session persistence and lifecycle
-  model.py                    Provider-agnostic LLM abstraction
-  builder.py                  Engine/model factory
-  tools.py                    Workspace tool implementations
-  tool_defs.py                Tool JSON schemas
-  prompts.py                  System prompt construction
-  config.py                   Configuration dataclass
-  credentials.py              Credential management
-  tui.py                      Rich terminal UI
-  demo.py                     Demo mode (output censoring)
-  patching.py                 File patching utilities
-  settings.py                 Persistent settings
-
-tests/                        Unit and integration tests
-```
+Foundry is the new product identity for OpenPlanter. Transitional `openplanter-*` CLI aliases remain available during the migration so existing scripts and deployments continue to work.
 
 ## Development
 
-### Desktop App
+Run the execution-engine suite:
 
 ```bash
-cd openplanter-desktop
-
-# Development mode (hot-reload)
-cargo tauri dev
-
-# Frontend tests
-cd frontend && npm test
-
-# E2E tests (Playwright)
-cd frontend && npm run test:e2e
-
-# Backend tests
-cargo test
+python -m pytest \
+  tests/test_opportunity_execution.py \
+  tests/test_execution_record.py \
+  tests/test_execution_lifecycle.py \
+  tests/test_execution_orchestrator.py \
+  tests/test_plugin_runtime.py \
+  tests/test_research_executor.py \
+  tests/test_eligibility_executor.py \
+  tests/test_runtime_result_integration.py \
+  tests/test_deterministic_execution_service.py \
+  tests/test_deterministic_run_loop.py \
+  tests/test_sqlite_execution_store.py \
+  tests/test_execution_context_snapshot.py \
+  tests/test_execution_cli.py \
+  tests/test_artifact_materialization.py \
+  tests/test_offer_design_executor.py \
+  tests/test_deliverable_builder_executor.py \
+  tests/test_outreach_preparation_executor.py \
+  tests/test_submission_executor.py \
+  tests/test_outcome_tracking_executor.py \
+  tests/test_execution_field_trial.py \
+  tests/test_cybercore_intelligence.py \
+  tests/test_cybercore_batch_integration.py -q
 ```
-
-### CLI Agent
-
-```bash
-# Install in editable mode
-pip install -e .
-
-# Run tests
-python -m pytest tests/
-
-# Skip live API tests
-python -m pytest tests/ --ignore=tests/test_live_models.py --ignore=tests/test_integration_live.py
-```
-
-Requires Python 3.10+. Dependencies: `rich`, `prompt_toolkit`, `pyfiglet`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).

@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "description": "Deterministic Cybercore commercialization routing policy. It identifies internal candidate paths but never performs an external action or Treasury Labs handoff.",
+  "path_precedence": [
+    "prototype_demonstration",
+    "consulting_engagement",
+    "supplier_contract",
+    "prime_bid",
+    "subcontractor_position",
+    "grant",
+    "research_partnership",
+    "licensing_commercialization"
+  ],
+  "type_paths": {
+    "funding": ["grant"],
+    "procurement": ["prime_bid"],
+    "challenge_prize": ["prototype_demonstration"],
+    "technology_need": ["licensing_commercialization"]
+  },
+  "procurement_type_paths": {
+    "CSO": ["prototype_demonstration", "prime_bid"],
+    "consulting": ["consulting_engagement"],
+    "RFP": ["prime_bid"],
+    "RFI": ["research_partnership"],
+    "OTA": ["prototype_demonstration", "research_partnership"],
+    "cooperative_agreement": ["grant", "research_partnership"]
+  },
+  "market_entry_paths": {
+    "prime": ["prime_bid"],
+    "subcontractor": ["subcontractor_position"],
+    "technology_partner": ["research_partnership"],
+    "consortium_member": ["research_partnership"]
+  },
+  "program_keyword_paths": [
+    {
+      "keywords": ["supplier", "vendor"],
+      "paths": ["supplier_contract"]
+    },
+    {
+      "keywords": ["consulting", "assessment", "advisory"],
+      "paths": ["consulting_engagement"]
+    },
+    {
+      "keywords": ["challenge", "prize", "accelerator", "prototype", "demonstration"],
+      "paths": ["prototype_demonstration"]
+    },
+    {
+      "keywords": ["partnership", "consortium", "research"],
+      "paths": ["research_partnership"]
+    },
+    {
+      "keywords": ["licensing", "commercialization", "technology transfer"],
+      "paths": ["licensing_commercialization"]
+    }
+  ],
+  "ready_temporal_statuses": ["OPEN", "DEADLINE_TODAY"],
+  "treasury_labs": {
+    "ready_status": "HUMAN_APPROVAL_REQUIRED",
+    "blocked_status": "BLOCKED"
+  }
+}

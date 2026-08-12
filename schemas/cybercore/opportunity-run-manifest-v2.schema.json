@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/shalominattii-us/Foundry/schemas/cybercore/opportunity-run-manifest-v2.schema.json",
+  "title": "Foundry Universal Opportunity Run Manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine_version",
+    "generated_at",
+    "artifact_count",
+    "execution_count",
+    "intelligence_count",
+    "human_review_count",
+    "automatic_dispatches",
+    "external_actions_executed",
+    "treasury_labs_handoffs_executed",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {"const": "universal-opportunity-run-manifest-v2"},
+    "engine_version": {"const": "universal-opportunity-engine-v2"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "artifact_count": {"type": "integer", "minimum": 0},
+    "execution_count": {"type": "integer", "minimum": 0},
+    "intelligence_count": {"type": "integer", "minimum": 0},
+    "human_review_count": {"type": "integer", "minimum": 0},
+    "automatic_dispatches": {"const": 0},
+    "external_actions_executed": {"const": 0},
+    "treasury_labs_handoffs_executed": {"const": 0},
+    "artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact_entry"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opportunity_id",
+        "opportunity_version",
+        "evidence_packet_id",
+        "evidence_packet_version",
+        "mission_candidate_id",
+        "mission_graph_id",
+        "file",
+        "files",
+        "sha256"
+      ],
+      "properties": {
+        "opportunity_id": {"type": "string", "pattern": "^opp_[a-f0-9]{20}$"},
+        "opportunity_version": {"type": "integer", "minimum": 1},
+        "evidence_packet_id": {"type": "string", "pattern": "^evp_[a-f0-9]{20}$"},
+        "evidence_packet_version": {"type": "integer", "minimum": 1},
+        "mission_candidate_id": {"type": "string", "pattern": "^mic_[a-f0-9]{20}$"},
+        "mission_graph_id": {"type": "string", "pattern": "^mig_[a-f0-9]{20}$"},
+        "execution_plan_id": {"type": "string", "pattern": "^exp_[a-f0-9]{20}$"},
+        "execution_run_id": {"type": "string", "pattern": "^exr_[a-f0-9]{20}$"},
+        "file": {"type": "string", "pattern": "^bundles/[^/]+\\.json$"},
+        "files": {
+          "type": "object",
+          "minProperties": 5,
+          "additionalProperties": {"type": "string", "minLength": 1}
+        },
+        "sha256": {
+          "type": "object",
+          "minProperties": 5,
+          "additionalProperties": {"$ref": "#/$defs/sha256"}
+        },
+        "intelligence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema_version", "artifact_hash", "maturity_stage", "disposition", "human_decision_required"],
+          "properties": {
+            "schema_version": {"const": "cybercore-opportunity-intelligence-output-v1"},
+            "artifact_hash": {"$ref": "#/$defs/sha256"},
+            "maturity_stage": {
+              "enum": ["SOURCE_DISCOVERY", "STRATEGIC_INTELLIGENCE", "FORECAST_MONITOR", "PROGRAM_DISCOVERY", "HUMAN_REVIEW", "CLOSED"]
+            },
+            "disposition": {"type": "string", "minLength": 1},
+            "human_decision_required": {"type": "boolean"}
+          }
+        }
+      },
+      "dependentRequired": {
+        "execution_plan_id": ["execution_run_id"],
+        "execution_run_id": ["execution_plan_id"]
+      }
+    }
+  }
+}

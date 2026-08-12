@@ -1,0 +1,24 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FOUNDRY_WORKSPACE=/data \
+    OPENPLANTER_WORKSPACE=/data
+
+WORKDIR /app
+
+RUN useradd --create-home --uid 10001 foundry \
+    && mkdir -p /data \
+    && chown -R foundry:foundry /data
+
+COPY pyproject.toml README.md ./
+COPY agent ./agent
+
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python -m pip install --no-cache-dir .
+
+USER foundry
+WORKDIR /data
+
+ENTRYPOINT ["foundry"]
+CMD ["--help"]

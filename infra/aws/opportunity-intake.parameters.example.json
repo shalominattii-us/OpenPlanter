@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey": "ClusterArn",
+    "ParameterValue": "arn:aws:ecs:us-east-1:123456789012:cluster/AEGENTIX-Cluster"
+  },
+  {
+    "ParameterKey": "ContainerImage",
+    "ParameterValue": "123456789012.dkr.ecr.us-east-1.amazonaws.com/openplanter-opportunities@sha256:REPLACE_ME"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-REPLACE_ME"
+  },
+  {
+    "ParameterKey": "PrivateSubnetIds",
+    "ParameterValue": "subnet-REPLACE_A,subnet-REPLACE_B"
+  },
+  {
+    "ParameterKey": "EfsSecurityGroupId",
+    "ParameterValue": "sg-REPLACE_ME"
+  },
+  {
+    "ParameterKey": "SamGovApiKeySecretArn",
+    "ParameterValue": "arn:aws:secretsmanager:us-east-1:123456789012:secret:openplanter/prod/sam-gov-api-key-REPLACE"
+  },
+  {
+    "ParameterKey": "ScheduleExpression",
+    "ParameterValue": "cron(0 6 * * ? *)"
+  },
+  {
+    "ParameterKey": "ScheduleTimezone",
+    "ParameterValue": "UTC"
+  }
+]

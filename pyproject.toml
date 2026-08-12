@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "openplanter-agent"
-version = "0.1.0"
-description = "A recursive-language-model coding agent with a terminal UI."
+name = "foundry-execution-platform"
+version = "0.3.0"
+description = "Foundry — an autonomous execution platform that turns opportunities into outcomes."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -21,7 +21,20 @@ textual = [
 ]
 
 [project.scripts]
+foundry-agent = "agent.__main__:main"
+foundry-opportunities = "agent.opportunities.runner:main"
+foundry = "agent.opportunities.execution_cli:main"
+foundry-field-trial = "agent.opportunities.field_trial:main"
+foundry-cybercore = "agent.opportunities.intelligence.cli:main"
+
+# Transitional aliases retained for existing operators and deployments.
 openplanter-agent = "agent.__main__:main"
+openplanter-opportunities = "agent.opportunities.runner:main"
+openplanter-execute = "agent.opportunities.execution_cli:main"
+openplanter-field-trial = "agent.opportunities.field_trial:main"
 
 [tool.setuptools.packages.find]
 include = ["agent*"]
+
+[tool.setuptools.package-data]
+"agent.opportunities.intelligence" = ["policies/*.json"]
